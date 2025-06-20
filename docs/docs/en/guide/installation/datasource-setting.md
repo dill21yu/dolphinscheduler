@@ -97,6 +97,44 @@ export SPRING_DATASOURCE_USERNAME={user}
 export SPRING_DATASOURCE_PASSWORD={password}
 ```
 
+Guide to Encrypting Database Passwords in Spring Boot Using Jasypt
+1. Add Dependency (Maven)
+Add the following dependency to your pom.xml file:
+
+```xml
+<dependency>
+<groupId>com.github.ulisesbocchio</groupId>
+<artifactId>jasypt-spring-boot-starter</artifactId>
+<version>3.0.5</version>
+</dependency>
+```
+
+2. Generate Encrypted Password (Using Command Line Tool)
+   You need to download the standalone JAR file from Jasypt, such as jasypt-1.9.3.jar.
+   Encrypt a Plain Text Password:
+
+```shell
+java -cp jasypt-1.9.3.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI input='{your_db_password}' password='{your_secret_key}' algorithm=PBEWithMD5AndDES
+```
+
+Optional: Decrypt for Testing:
+
+```shell
+java -cp jasypt-1.9.3.jar org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI input='{encryptedPassword}' password='{your_secret_key}' algorithm=PBEWithMD5AndDES
+```
+
+3. Set via Environment Variables (Recommended for Production)
+
+```shell
+# Set encryption key and algorithm
+export JASYPT_ENCRYPTOR_PASSWORD={your_secret_key}
+export JASYPT_ENCRYPTOR_ALGORITHM=PBEWithMD5AndDES
+export JASYPT_ENCRYPTOR_IV_GENERATOR_CLASSNAME=org.jasypt.iv.NoIvGenerator
+
+# Set the encrypted database password
+export SPRING_DATASOURCE_PASSWORD={ENC(encryptedPassword)}
+```
+
 After the above steps done you would create a new database for DolphinScheduler, then run the Shell script to init database:
 
 ```shell
