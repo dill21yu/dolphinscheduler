@@ -96,6 +96,43 @@ export SPRING_DATASOURCE_USERNAME={user}
 export SPRING_DATASOURCE_PASSWORD={password}
 ```
 
+如果考虑安全的情况下，数据库密码禁止明文密码方式配置，可以采用Jasypt加密/解密工具来配置密文密码，步骤如下：
+
+1，POM文件中添加依赖：
+
+```xml
+<dependency>
+    <groupId>com.github.ulisesbocchio</groupId>
+    <artifactId>jasypt-spring-boot-starter</artifactId>
+    <version>3.0.5</version>
+</dependency>
+```
+
+2，找到jasypt-1.9.3.jar所在位置，然后使用下面的方法计算密文
+
+加密：
+
+```shell
+java -cp jasypt-1.9.3.jar org.jasypt.intf.cli.JasyptPBEStringEncryptionCLI input='{明文密码}' password={密钥} algorithm=PBEWithMD5AndDES
+```
+
+解密：
+
+```shell
+java -cp jasypt-1.9.3.jar org.jasypt.intf.cli.JasyptPBEStringDecryptionCLI input='{密文密码}' password={密钥} algorithm=PBEWithMD5andDES
+```
+
+3，设置如下环境变量，启用密码加密
+
+```shell
+# jasypt 
+export JASYPT_ENCRYPTOR_PASSWORD={密钥}
+export JASYPT_ENCRYPTOR_ALGORITHM=PBEWithMD5AndDES
+export JASYPT_ENCRYPTOR_IV_GENERATOR_CLASSNAME=org.jasypt.iv.NoIvGenerator
+# encrypted password
+export SPRING_DATASOURCE_PASSWORD=ENC('{密文密码}')
+```
+
 完成上述步骤后，您已经为 DolphinScheduler 创建一个新数据库，现在你可以通过快速的 Shell 脚本来初始化数据库
 
 ```shell

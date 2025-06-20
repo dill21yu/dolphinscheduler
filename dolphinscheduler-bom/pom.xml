@@ -65,7 +65,6 @@
         <activation.version>1.1</activation.version>
         <javax-mail>1.6.2</javax-mail>
         <postgresql.version>42.4.1</postgresql.version>
-        <hive-jdbc.version>2.3.9</hive-jdbc.version>
         <kyuubi-jdbc.version>1.7.0</kyuubi-jdbc.version>
         <commons-io.version>2.11.0</commons-io.version>
         <oshi-core.version>6.1.1</oshi-core.version>
@@ -98,7 +97,6 @@
         <springdoc-openapi-ui.version>1.6.9</springdoc-openapi-ui.version>
         <aspectj.version>1.9.7</aspectj.version>
         <zt-zip.version>1.15</zt-zip.version>
-        <trino-jdbc.version>402</trino-jdbc.version>
         <azure-identity.version>1.7.1</azure-identity.version>
         <redshift-jdbc42.version>2.1.0.9</redshift-jdbc42.version>
         <aws-java-sdk-redshift.version>1.12.300</aws-java-sdk-redshift.version>
@@ -120,6 +118,9 @@
         <zeppelin-client.version>0.10.1</zeppelin-client.version>
         <aliyun-voice.version>2.1.4</aliyun-voice.version>
         <nashorn-sandbox.version>0.3.2</nashorn-sandbox.version>
+
+        <!-- 配置文件敏感信息加密 -->
+        <jasypt-spring-boot-starter.version>3.0.5</jasypt-spring-boot-starter.version>
     </properties>
 
     <dependencyManagement>
@@ -389,14 +390,12 @@
                 <groupId>com.mysql</groupId>
                 <artifactId>mysql-connector-j</artifactId>
                 <version>${mysql-connector.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
                 <groupId>com.oracle.database.jdbc</groupId>
                 <artifactId>ojdbc8</artifactId>
                 <version>${oracle-jdbc.version}</version>
-                <scope>test</scope>
             </dependency>
 
             <dependency>
@@ -944,6 +943,14 @@
                 <artifactId>delight-nashorn-sandbox</artifactId>
                 <version>${nashorn-sandbox.version}</version>
             </dependency>
+
+            <!-- jasypt 配置文件敏感信息加解密 -->
+            <dependency>
+                <groupId>com.github.ulisesbocchio</groupId>
+                <artifactId>jasypt-spring-boot-starter</artifactId>
+                <version>${jasypt-spring-boot-starter.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -980,6 +987,8 @@
                 <guava.version>32.0.1-jre</guava.version>
                 <spring-boot.version>2.7.18</spring-boot.version>
                 <commons-beanutils.version>1.11.0</commons-beanutils.version>
+                <hive-jdbc.version>3.1.2</hive-jdbc.version>
+                <trino-jdbc.version>406</trino-jdbc.version>
             </properties>
         </profile>
         <profile>
@@ -989,6 +998,8 @@
                 <guava.version>31.1-jre</guava.version>
                 <spring-boot.version>2.7.3</spring-boot.version>
                 <commons-beanutils.version>1.9.4</commons-beanutils.version>
+                <hive-jdbc.version>2.3.9</hive-jdbc.version>
+                <trino-jdbc.version>402</trino-jdbc.version>
             </properties>
         </profile>
     </profiles>
