@@ -77,6 +77,24 @@ pipeline {
             }
         }
 
+        // 重命名部署包
+        stage('Rename tar.gz') {
+            steps {
+              container('tools') {
+                script {
+
+                    sh """
+                        cd $WORKSPACE/dolphinscheduler-dist/target
+                        ls -l apache-dolphinscheduler-*-bin.tar.gz
+                        rm -rf apache-dolphinscheduler-*-bin.tar.gz
+                        mv apache-dolphinscheduler-dev-SNAPSHOT-bin dolphinscheduler-3.3.0_ccdp_1.0.0
+                        tar -zcf dolphinscheduler-3.3.0_ccdp_1.0.0.tar.gz dolphinscheduler-3.3.0_ccdp_1.0.0
+                        ls -l dolphinscheduler-*.tar.gz
+                    """
+                  }
+                }
+            }
+        }
 
         // upload tar to nexus repository
         stage('Deploy') {
@@ -85,8 +103,8 @@ pipeline {
                     container('tools') {
                         withCredentials([usernamePassword(credentialsId: 'credential-nexus', passwordVariable: 'password', usernameVariable: 'user2')]) {
                              sh """
-                                ls -l $WORKSPACE/dolphinscheduler-dist/target/apache-dolphinscheduler-*.tar.gz
-                                curl -v  -u sys_deployer:$password --upload-file $WORKSPACE/dolphinscheduler-dist/target/apache-dolphinscheduler-3.3.0_ccdp_1.0.0.tar.gz https://devops.ctcdn.cn/nexus/repository/raw-repo/bigdata-emr-dev/emr-ccdp-dev-generic/emr-ccdp-tar-dev/
+                                ls -l $WORKSPACE/dolphinscheduler-dist/target/dolphinscheduler-*.tar.gz
+                                curl -v  -u sys_deployer:$password --upload-file $WORKSPACE/dolphinscheduler-dist/target/dolphinscheduler-3.3.0_ccdp_1.0.0.tar.gz https://devops.ctcdn.cn/nexus/repository/raw-repo/bigdata-emr-dev/emr-ccdp-dev-generic/emr-ccdp-tar-dev/
                              """
                         }
                     }
