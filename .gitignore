@@ -48,6 +48,7 @@ dolphinscheduler-alert/src/main/resources/alert.properties_bak
 dolphinscheduler-alert/src/main/resources/logback.xml
 dolphinscheduler-ui/dist
 dolphinscheduler-ui/node
+dolphinscheduler-ui/pnpm-lock.yaml
 dolphinscheduler-common/sql
 dolphinscheduler-common/test
 dolphinscheduler-worker/logs
