@@ -1059,7 +1059,7 @@ ALTER TABLE t_ds_relation_project_worker_group ALTER COLUMN id SET DEFAULT NEXTV
 
 -- Records of t_ds_user?user : admin , password : dolphinscheduler123
 INSERT INTO t_ds_user(user_name, user_password, user_type, email, phone, tenant_id, state, create_time, update_time, time_zone)
-VALUES ('admin', '7ad2410b2f4c074479a8937a28a22b8f', '0', 'xxx@qq.com', '', '-1', 1, '2018-03-27 15:48:50', '2018-10-24 17:40:22', null);
+VALUES ('admin', '79e2a5255f28167d9c10c5a61ff9149f', '0', 'xxx@qq.com', '', '-1', 1, '2018-03-27 15:48:50', '2018-10-24 17:40:22', null);
 
 -- Records of t_ds_tenant
 INSERT INTO t_ds_tenant(id, tenant_code, description, queue_id, create_time, update_time)
