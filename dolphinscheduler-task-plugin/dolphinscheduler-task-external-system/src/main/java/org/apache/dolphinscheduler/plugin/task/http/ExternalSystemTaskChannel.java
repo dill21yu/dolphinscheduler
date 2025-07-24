@@ -15,17 +15,24 @@
  * limitations under the License.
  */
 
-package org.apache.dolphinscheduler.plugin.task.api.parameters.resource;
+package org.apache.dolphinscheduler.plugin.task.externalSystem;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import org.apache.dolphinscheduler.common.utils.JSONUtils;
+import org.apache.dolphinscheduler.plugin.task.api.AbstractTask;
+import org.apache.dolphinscheduler.plugin.task.api.TaskChannel;
+import org.apache.dolphinscheduler.plugin.task.api.TaskExecutionContext;
+import org.apache.dolphinscheduler.plugin.task.api.parameters.AbstractParameters;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, visible = true, property = "resourceType")
-@JsonSubTypes({
-        @Type(value = DataSourceParameters.class, name = "DATASOURCE"),
-        @Type(value = ExternalSystemResourceParameters.class, name = "EXTERNAL_SYSTEM"),
-})
-public abstract class AbstractResourceParameters {
+public class ExternalSystemTaskChannel implements TaskChannel {
+
+    @Override
+    public AbstractTask createTask(TaskExecutionContext taskRequest) {
+        return new ExternalSystemTask(taskRequest);
+    }
+
+    @Override
+    public AbstractParameters parseParameters(String taskParams) {
+        return JSONUtils.parseObject(taskParams, ExternalSystemParameters.class);
+    }
 
 }

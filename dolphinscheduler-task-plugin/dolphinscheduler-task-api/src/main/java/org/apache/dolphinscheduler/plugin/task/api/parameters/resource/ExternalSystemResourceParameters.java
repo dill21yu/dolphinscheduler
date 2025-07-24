@@ -17,15 +17,17 @@
 
 package org.apache.dolphinscheduler.plugin.task.api.parameters.resource;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, visible = true, property = "resourceType")
-@JsonSubTypes({
-        @Type(value = DataSourceParameters.class, name = "DATASOURCE"),
-        @Type(value = ExternalSystemResourceParameters.class, name = "EXTERNAL_SYSTEM"),
-})
-public abstract class AbstractResourceParameters {
+public class ExternalSystemResourceParameters extends AbstractResourceParameters {
 
+    private String connectionParams;
+
+    public String getConnectionParams() {
+        return connectionParams;
+    }
+
+    public void setConnectionParams(String connectionParams) {
+        this.connectionParams = connectionParams;
+    }
 }

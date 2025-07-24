@@ -207,6 +207,9 @@ public final class Constants {
 
     public static final String DEFAULT = "default";
     public static final String PASSWORD = "password";
+    public static final String JWTSECRETORPUBLICKEY = "jwtSecretOrPublicKey";
+    public static final String SECRET = "secret";
+
     public static final String XXXXXX = "******";
     public static final String NULL = "NULL";
     public static final String THREAD_NAME_MASTER_SERVER = "Master-Server";

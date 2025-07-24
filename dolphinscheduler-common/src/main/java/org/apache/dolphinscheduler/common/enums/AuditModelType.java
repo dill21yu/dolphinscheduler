@@ -42,6 +42,7 @@ public enum AuditModelType {
     TASK_GROUP("TaskGroup", RESOURCE),
 
     DATASOURCE("Datasource", null),
+    EXTERNAL_SYSTEM("ExternalSystem", null),
 
     SECURITY("Security", null),
     TENANT("Tenant", SECURITY),
