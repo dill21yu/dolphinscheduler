@@ -1,6 +1,7 @@
 @Library('cdn-devops') _
 
 def RELEASE_BUILD
+def TAG_NAME
 String BUILD_RESULT = ""
 
 pipeline {
@@ -14,7 +15,14 @@ pipeline {
 		timeout(time: 60, unit: 'MINUTES')
 		gitLabConnection('gitlab')
 	}
+	parameters {
+        choice(name: 'buildx', choices: ['linux/amd64', 'linux/arm64', 'linux/arm64,linux/amd64'], description: 'processor architecture')
+    }
     environment {
+        // 权限验证
+        IMAGE_CREDENTIALS = "credential-harbor"
+        // 镜像仓库地址
+        IMAGE_REPOSITORY = "harbor.ctyuncdn.cn/datawings/${DEPLOYMENT_NAME}"
         // 镜像tag
         TAG_NAME = "${BRANCH_NAME}"
     }
@@ -77,7 +85,42 @@ pipeline {
             }
         }
 
-        // 重命名部署包
+        // build images
+        stage('Build-Image') {
+            steps {
+                script {
+
+                    def images = ["dolphinscheduler-alert", "dolphinscheduler-master", "dolphinscheduler-worker", "dolphinscheduler-api", "dolphinscheduler-tools"]
+                    images.each { image ->
+                        echo "image is ${image}"
+
+                        container('ecx-docker-with-buildx') {
+                            if ("${image}" == "dolphinscheduler-alert") {
+                                builder = devops.dockerBuild(
+                                        "${image}/dolphinscheduler-alert-server/src/main/docker/Dockerfile", //Dockerfile
+                                        "dolphinscheduler-dist", // build context
+                                        "harbor.ctyuncdn.cn/datawings/${image}-server", // repo address
+                                        TAG_NAME, // tag
+                                        IMAGE_CREDENTIALS, // credentials for pushing
+                                )
+                            } else {
+                                builder = devops.dockerBuild(
+                                        "${image}/src/main/docker/Dockerfile", //Dockerfile
+                                        "dolphinscheduler-dist", // build context
+                                        "harbor.ctyuncdn.cn/datawings/${image}", // repo address
+                                        TAG_NAME, // tag
+                                        IMAGE_CREDENTIALS, // credentials for pushing
+                                )
+                            }
+                            builder.buildxAndPush(params.buildx)
+                        }
+                    }
+                }
+            }
+        }
+
+
+        // rename tar.gz
         stage('Rename tar.gz') {
             steps {
               container('tools') {
@@ -96,6 +139,7 @@ pipeline {
             }
         }
 
+
         // upload tar to nexus repository
         stage('Deploy') {
             steps {
@@ -105,6 +149,12 @@ pipeline {
                              sh """
                                 ls -l $WORKSPACE/dolphinscheduler-dist/target/dolphinscheduler-*.tar.gz
                                 curl -v  -u sys_deployer:$password --upload-file $WORKSPACE/dolphinscheduler-dist/target/dolphinscheduler-3.3.0_ccdp_1.0.0.tar.gz https://devops.ctcdn.cn/nexus/repository/raw-repo/bigdata-emr-dev/emr-ccdp-dev-generic/emr-ccdp-tar-dev/
+                             """
+
+                             sh """
+                                find . -type f -name "dolphinscheduler-*.tgz" | xargs rm -f
+                                helm package $WORKSPACE/deploy/kubernetes/dolphinscheduler/
+                                curl -v  -u sys_deployer:$password --upload-file dolphinscheduler-*.tgz https://devops.ctcdn.cn/nexus/repository/datawings-charts/
                              """
                         }
                     }
