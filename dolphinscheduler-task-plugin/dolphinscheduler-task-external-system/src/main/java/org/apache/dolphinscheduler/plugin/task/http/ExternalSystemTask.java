@@ -232,7 +232,8 @@ public class ExternalSystemTask extends AbstractTask {
      */
     public String pollTaskStatus() throws TaskException {
         try {
-            BaseExternalSystemParams.PollingInterfaceConfig pollConfig = baseExternalSystemParams.getPollStatusInterface();
+            BaseExternalSystemParams.PollingInterfaceConfig pollConfig =
+                    baseExternalSystemParams.getPollStatusInterface();
 
             String url = replaceParameterPlaceholders(pollConfig.getUrl());
 
