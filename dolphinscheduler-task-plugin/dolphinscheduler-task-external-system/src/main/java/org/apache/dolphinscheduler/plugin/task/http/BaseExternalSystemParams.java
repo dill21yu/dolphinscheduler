@@ -23,6 +23,7 @@ import lombok.Data;
 
 @Data
 public class BaseExternalSystemParams {
+
     private Integer id; // 系统id
 
     private String systemName; // 系统名称
@@ -37,18 +38,18 @@ public class BaseExternalSystemParams {
     private PollingInterfaceConfig pollStatusInterface; // 轮询状态接口配置
     private InterfaceConfig stopInterface; // 停止接口配置
 
-
     @Data
     public static class FieldMapping {
 
         private String externalField; // 外部系统字段名
         private String internalField; // 注册系统字段名
-//        private FieldType fieldType; // 字段类型（枚举）
+        // private FieldType fieldType; // 字段类型（枚举）
     }
 
     @Data
     public static class AuthConfig {
-        private AuthType authType;  // 认证类型：BASIC, JWT, OAUTH2
+
+        private AuthType authType; // 认证类型：BASIC, JWT, OAUTH2
 
         // === 基础认证（Basic Auth） ===
         private String basicUsername;
@@ -61,20 +62,17 @@ public class BaseExternalSystemParams {
         private String oauth2TokenUrl;
         private String oauth2ClientId;
         private String oauth2ClientSecret;
-        private String oauth2GrantType;    // e.g., "client_credentials", "password"
-        private String oauth2Username;     // 仅限 password 模式
-        private String oauth2Password;     // 仅限 password 模式
-
+        private String oauth2GrantType; // e.g., "client_credentials", "password"
+        private String oauth2Username; // 仅限 password 模式
+        private String oauth2Password; // 仅限 password 模式
 
         // === 动态映射配置（如请求头/参数映射） ===
         private AuthMapping[] authMappings;
     }
 
-
     public enum AuthType {
         BASIC, JWT, OAUTH2
     }
-
 
     @Data
     public static class InterfaceConfig {
@@ -87,6 +85,7 @@ public class BaseExternalSystemParams {
 
     @Data
     public static class PollingInterfaceConfig extends InterfaceConfig {
+
         private PollingSuccessConfig pollingSuccessConfig; // 轮询成功配置
         private PollingFailureConfig pollingFailureConfig; // 轮询失败配置
     }
@@ -113,12 +112,10 @@ public class BaseExternalSystemParams {
         private String failureValue; // 失败字段对应的值
     }
 
-
     // 枚举：字段类型
     public enum FieldType {
         STRING, INTEGER, BOOLEAN, DATE, JSON_OBJECT, CUSTOM
     }
-
 
     // 枚举：HTTP 方法
     public enum HttpMethod {

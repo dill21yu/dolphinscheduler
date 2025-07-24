@@ -17,8 +17,6 @@
 
 package org.apache.dolphinscheduler.plugin.task.api.parameters.resource;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
-
 public class ExternalSystemResourceParameters extends AbstractResourceParameters {
 
     private String connectionParams;

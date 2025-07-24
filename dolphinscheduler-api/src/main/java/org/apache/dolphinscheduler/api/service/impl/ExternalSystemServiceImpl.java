@@ -17,7 +17,6 @@
 
 package org.apache.dolphinscheduler.api.service.impl;
 
-import com.jayway.jsonpath.JsonPath;
 import org.apache.dolphinscheduler.api.enums.Status;
 import org.apache.dolphinscheduler.api.exceptions.ServiceException;
 import org.apache.dolphinscheduler.api.service.ExternalSystemService;
@@ -34,6 +33,9 @@ import org.apache.dolphinscheduler.dao.entity.ExternalSystem;
 import org.apache.dolphinscheduler.dao.entity.ExternalSystemTaskQuery;
 import org.apache.dolphinscheduler.dao.entity.User;
 import org.apache.dolphinscheduler.dao.mapper.ExternalSystemMapper;
+import org.apache.dolphinscheduler.plugin.datasource.api.utils.PasswordUtils;
+import org.apache.dolphinscheduler.plugin.task.api.TaskException;
+import org.apache.dolphinscheduler.plugin.task.externalSystem.AuthenticationUtils;
 import org.apache.dolphinscheduler.plugin.task.externalSystem.BaseExternalSystemParams;
 
 import java.util.ArrayList;
@@ -47,9 +49,6 @@ import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
 
-import org.apache.dolphinscheduler.plugin.datasource.api.utils.PasswordUtils;
-import org.apache.dolphinscheduler.plugin.task.api.TaskException;
-import org.apache.dolphinscheduler.plugin.task.externalSystem.AuthenticationUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -57,6 +56,7 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.jayway.jsonpath.JsonPath;
 
 @Service
 @Slf4j
@@ -84,13 +84,13 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         // 移除 id 信息
         externalSystemParam.setId(null);
         BaseExternalSystemParams.AuthConfig authConfig = externalSystemParam.getAuthConfig();
-        if(null!=authConfig.getOauth2Password()&&!authConfig.getOauth2Password().isEmpty()){
+        if (null != authConfig.getOauth2Password() && !authConfig.getOauth2Password().isEmpty()) {
             PasswordUtils.encodePassword(authConfig.getOauth2Password());
         }
-        if(null!=authConfig.getJwtToken()&&!authConfig.getJwtToken().isEmpty()){
+        if (null != authConfig.getJwtToken() && !authConfig.getJwtToken().isEmpty()) {
             PasswordUtils.encodePassword(authConfig.getJwtToken());
         }
-        if(null!=authConfig.getBasicPassword()&&!authConfig.getBasicPassword().isEmpty()){
+        if (null != authConfig.getBasicPassword() && !authConfig.getBasicPassword().isEmpty()) {
             PasswordUtils.encodePassword(authConfig.getBasicPassword());
         }
 
@@ -195,7 +195,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     public List<ExternalSystem> queryDataSourceList(User loginUser) {
         List<ExternalSystem> externalSystemList;
         if (loginUser.getUserType().equals(UserType.ADMIN_USER)) {
-            externalSystemList = externalSystemMapper.selectList( 0);
+            externalSystemList = externalSystemMapper.selectList(0);
         } else {
             Set<Integer> ids = resourcePermissionCheckService
                     .userOwnedResourceIdsAcquisition(AuthorizationType.EXTERNALSYSTEM, loginUser.getId(), log);
@@ -256,13 +256,12 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     @Override
     public List<ExternalSystemTaskQuery> queryExternalSystemTasks(User loginUser, int externalSystemId) {
 
-
-        //OkHttpUtils.post();
+        // OkHttpUtils.post();
         ExternalSystem externalSystem = externalSystemMapper.selectById(externalSystemId);
         BaseExternalSystemParams baseExternalSystemParam =
                 JSONUtils.parseObject(externalSystem.getConnectionParams(), BaseExternalSystemParams.class);
 
-        //校验查询必要
+        // 校验查询必要
         String taskIdExpression = "";
         String taskNameExpression = "";
         for (BaseExternalSystemParams.FieldMapping mapping : baseExternalSystemParam.getFieldMappings()) {
@@ -294,7 +293,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             headeMap.put("Authorization", token);
             // 处理参数
             for (BaseExternalSystemParams.RequestParameter param : selectConfig.getParameters()) {
-//todo                String value = replaceParameterPlaceholders(param.getParamValue());
+                // todo String value = replaceParameterPlaceholders(param.getParamValue());
                 String value = param.getParamValue();
 
                 switch (param.getLocation().name()) {
@@ -330,7 +329,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             }
 
             // 解析响应获取id name
-           return  parseSelectResponse(response.getBody(), taskIdExpression, taskNameExpression);
+            return parseSelectResponse(response.getBody(), taskIdExpression, taskNameExpression);
 
         } catch (Exception e) {
             log.error("select task failed", e);
@@ -338,7 +337,8 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         }
     }
 
-    private List<ExternalSystemTaskQuery> parseSelectResponse(String responseBody, String taskIdExpression, String taskNameExpression) throws TaskException {
+    private List<ExternalSystemTaskQuery> parseSelectResponse(String responseBody, String taskIdExpression,
+                                                              String taskNameExpression) throws TaskException {
         List<ExternalSystemTaskQuery> resultList = new ArrayList<>();
 
         try {
@@ -357,7 +357,6 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
                 task.setName(nameValues.get(i));
                 resultList.add(task);
             }
-
 
         } catch (Exception e) {
             log.error("Parse select response failed", e);

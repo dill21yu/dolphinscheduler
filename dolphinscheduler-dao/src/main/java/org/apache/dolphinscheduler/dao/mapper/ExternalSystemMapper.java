@@ -40,7 +40,6 @@ public interface ExternalSystemMapper extends BaseMapper<ExternalSystem> {
      */
     List<ExternalSystem> selectList(@Param("userId") Integer userId);
 
-
     /**
      * 分页查询外部系统列表
      */

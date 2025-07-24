@@ -34,8 +34,10 @@ import org.apache.dolphinscheduler.common.utils.JSONUtils;
 import org.apache.dolphinscheduler.dao.entity.ExternalSystem;
 import org.apache.dolphinscheduler.dao.entity.ExternalSystemTaskQuery;
 import org.apache.dolphinscheduler.dao.entity.User;
-import org.apache.dolphinscheduler.plugin.task.externalSystem.BaseExternalSystemParams;
 import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;
+import org.apache.dolphinscheduler.plugin.task.externalSystem.BaseExternalSystemParams;
+
+import java.util.List;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -56,8 +58,6 @@ import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.Parameters;
 import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
-
-import java.util.List;
 
 @Tag(name = "EXTERNAL_SYSTEM_TAG")
 @RestController
@@ -147,7 +147,7 @@ public class ExternalSystemController extends BaseController {
     @ApiException(TEST_EXTERNAL_SYSTEM_CONNECTION_ERROR)
     public Result<Object> testExternalSystemConnection(@Parameter(hidden = true) @RequestAttribute(value = Constants.SESSION_USER) User loginUser,
                                                        @Parameter(name = "externalSystemParam", description = "EXTERNAL_SYSTEM_PARAM", required = true) @RequestBody String jsonStr) {
-        BaseExternalSystemParams externalSystemParam =  JSONUtils.parseObject(jsonStr, BaseExternalSystemParams.class);
+        BaseExternalSystemParams externalSystemParam = JSONUtils.parseObject(jsonStr, BaseExternalSystemParams.class);
         boolean connectionResult = externalSystemService.testExternalSystemConnection(loginUser, externalSystemParam);
         return Result.success(connectionResult);
     }
@@ -171,9 +171,9 @@ public class ExternalSystemController extends BaseController {
     @ResponseStatus(HttpStatus.OK)
     @ApiException(QUERY_EXTERNAL_SYSTEM_ERROR)
     public Result<PageInfo<ExternalSystem>> queryExternalSystemListPaging(@Parameter(hidden = true) @RequestAttribute(value = Constants.SESSION_USER) User loginUser,
-                                                                    @RequestParam(value = "searchVal", required = false) String searchVal,
-                                                                    @RequestParam("pageNo") Integer pageNo,
-                                                                    @RequestParam("pageSize") Integer pageSize) {
+                                                                          @RequestParam(value = "searchVal", required = false) String searchVal,
+                                                                          @RequestParam("pageNo") Integer pageNo,
+                                                                          @RequestParam("pageSize") Integer pageSize) {
         checkPageParams(pageNo, pageSize);
         searchVal = ParameterUtils.handleEscapes(searchVal);
         PageInfo<ExternalSystem> result =
@@ -196,7 +196,6 @@ public class ExternalSystemController extends BaseController {
         return Result.success(datasourceList);
     }
 
-
     /**
      * delete external system
      *
@@ -217,7 +216,6 @@ public class ExternalSystemController extends BaseController {
         externalSystemService.deleteExternalSystem(loginUser, id);
         return Result.success();
     }
-
 
     @Operation(summary = "queryExternalSystemTasks", description = "QUERY_EXTERNAL_SYSTEM_TASKS_NOTES")
     @GetMapping(value = "/queryExternalSystemTasks")
