@@ -138,7 +138,7 @@ public class TaskExecutionContextFactory {
         }
 
         map.forEach((code, parameters) -> {
-            ExternalSystem externalSystem  = processService.findExternalSystemById(code);
+            ExternalSystem externalSystem = processService.findExternalSystemById(code);
             if (Objects.isNull(externalSystem)) {
                 return;
             }

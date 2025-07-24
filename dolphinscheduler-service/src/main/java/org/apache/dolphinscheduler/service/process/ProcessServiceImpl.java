@@ -899,7 +899,6 @@ public class ProcessServiceImpl implements ProcessService {
         return dataSourceMapper.selectById(id);
     }
 
-
     /**
      * find data source by id
      *
@@ -907,7 +906,7 @@ public class ProcessServiceImpl implements ProcessService {
      * @return datasource
      */
     @Override
-    public ExternalSystem findExternalSystemById(int id){
+    public ExternalSystem findExternalSystemById(int id) {
         return externalSystemMapper.selectById(id);
     }
 
