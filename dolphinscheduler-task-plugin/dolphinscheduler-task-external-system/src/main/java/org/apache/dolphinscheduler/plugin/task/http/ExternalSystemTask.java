@@ -29,6 +29,7 @@ import org.apache.dolphinscheduler.plugin.task.api.TaskException;
 import org.apache.dolphinscheduler.plugin.task.api.TaskExecutionContext;
 import org.apache.dolphinscheduler.plugin.task.api.model.Property;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.AbstractParameters;
+import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -39,17 +40,16 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import lombok.extern.slf4j.Slf4j;
+
 import com.jayway.jsonpath.JsonPath;
-import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;
 
 @Slf4j
 public class ExternalSystemTask extends AbstractTask {
-    
-    //    private final HashSet<String> waitingStateSet = Sets.newHashSet("RUNNING");
+
+    // private final HashSet<String> waitingStateSet = Sets.newHashSet("RUNNING");
     private static final String EXTERNAL_TASK_ID = "externalTaskId";
     private static final String INTERNAL_TASK_INSTANCE_ID = "taskInstanceId";
     private Boolean traceEnabled = true;
-
 
     private ExternalSystemParameters externalSystemParameters;
     private BaseExternalSystemParams baseExternalSystemParams;
@@ -60,9 +60,6 @@ public class ExternalSystemTask extends AbstractTask {
     private Set<String> successStatusCache = new HashSet<>();
     private Set<String> failureStatusCache = new HashSet<>();
 
-
-
-
     /**
      * 构造函数：初始化任务执行上下文。
      *
@@ -71,8 +68,10 @@ public class ExternalSystemTask extends AbstractTask {
     public ExternalSystemTask(TaskExecutionContext taskExecutionContext) {
         super(taskExecutionContext);
         this.taskExecutionContext = taskExecutionContext;
-        this.externalSystemParameters = JSONUtils.parseObject(taskExecutionContext.getTaskParams(), ExternalSystemParameters.class);
-        baseExternalSystemParams = externalSystemParameters.generateExtendedContext(taskExecutionContext.getResourceParametersHelper());
+        this.externalSystemParameters =
+                JSONUtils.parseObject(taskExecutionContext.getTaskParams(), ExternalSystemParameters.class);
+        baseExternalSystemParams =
+                externalSystemParameters.generateExtendedContext(taskExecutionContext.getResourceParametersHelper());
     }
 
     @Override
@@ -97,11 +96,10 @@ public class ExternalSystemTask extends AbstractTask {
     public void handle(TaskCallBack taskCallBack) throws TaskException {
         try {
 
-//            BaseExternalSystemParams =  (BaseExternalSystemParams) DataSourceUtils.buildConnectionParams(dbType,
-//                    sqlTaskExecutionContext.getConnectionParams());
+            // BaseExternalSystemParams = (BaseExternalSystemParams) DataSourceUtils.buildConnectionParams(dbType,
+            // sqlTaskExecutionContext.getConnectionParams());
             // 1. 认证获取token
             accessToken = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParams.getAuthConfig());
-
 
             // 2. 提交任务
             submitExternalTask();
@@ -122,13 +120,10 @@ public class ExternalSystemTask extends AbstractTask {
             cancelTaskInstance();
         } catch (Exception e) {
             throw new TaskException("cancel external system task error", e);
-        }finally {
+        } finally {
             setExitStatusCode(TaskConstants.EXIT_CODE_KILL);
         }
     }
-
-
-
 
     /**
      * 提交任务到外部系统
@@ -151,7 +146,7 @@ public class ExternalSystemTask extends AbstractTask {
             // 处理参数
             for (BaseExternalSystemParams.RequestParameter param : submitConfig.getParameters()) {
                 String value = replaceParameterPlaceholders(param.getParamValue());
-                ParameterUtils.convertParameterPlaceholders(value, parameterMap);//todo 可以替换内置参数
+                ParameterUtils.convertParameterPlaceholders(value, parameterMap);// todo 可以替换内置参数
                 switch (param.getLocation().name()) {
                     case "HEADER":
                         headeMap.put(param.getParamName(), value);
@@ -232,15 +227,12 @@ public class ExternalSystemTask extends AbstractTask {
         }
     }
 
-
-
-
     /**
      * 轮询任务状态
      */
     public String pollTaskStatus() throws TaskException {
         try {
-            BaseExternalSystemParams.InterfaceConfig pollConfig = baseExternalSystemParams.getPollStatusInterface();
+            BaseExternalSystemParams.PollingInterfaceConfig pollConfig = baseExternalSystemParams.getPollStatusInterface();
 
             String url = replaceParameterPlaceholders(pollConfig.getUrl());
 
@@ -349,7 +341,6 @@ public class ExternalSystemTask extends AbstractTask {
                     throw new TaskException("Unsupported HTTP method: " + stopConfig.getMethod());
             }
 
-
             if (response.getStatusCode() != 200) {
                 throw new TaskException("polling task failed: " + response.getBody());
             }
@@ -381,8 +372,6 @@ public class ExternalSystemTask extends AbstractTask {
         return result.toString();
     }
 
-
-
     /**
      * 解析提交响应
      */
@@ -403,7 +392,7 @@ public class ExternalSystemTask extends AbstractTask {
             }
 
         } catch (Exception e) {
-            log.error("submit responseBody:{},Parse response failed:{}",responseBody, e);
+            log.error("submit responseBody:{},Parse response failed:{}", responseBody, e);
             throw new TaskException("Parse submit response failed", e);
         }
     }
@@ -461,7 +450,5 @@ public class ExternalSystemTask extends AbstractTask {
             }
         }
     }
-
-
 
 }
