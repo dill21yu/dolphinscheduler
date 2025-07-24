@@ -15,17 +15,39 @@
  * limitations under the License.
  */
 
-package org.apache.dolphinscheduler.plugin.task.api.parameters.resource;
+package org.apache.dolphinscheduler.dao.entity;
 
-import com.fasterxml.jackson.annotation.JsonSubTypes;
-import com.fasterxml.jackson.annotation.JsonSubTypes.Type;
-import com.fasterxml.jackson.annotation.JsonTypeInfo;
+import java.util.Date;
 
-@JsonTypeInfo(use = JsonTypeInfo.Id.NAME, visible = true, property = "resourceType")
-@JsonSubTypes({
-        @Type(value = DataSourceParameters.class, name = "DATASOURCE"),
-        @Type(value = ExternalSystemResourceParameters.class, name = "EXTERNAL_SYSTEM"),
-})
-public abstract class AbstractResourceParameters {
+import lombok.Data;
 
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+
+@Data
+@TableName("t_ds_external_system")
+public class ExternalSystem {
+
+    @TableId(value = "id", type = IdType.AUTO)
+    private Integer id;
+
+    @TableField("name")
+    private String name;
+
+    @TableField("type")
+    private String type;
+
+    @TableField("connection_params")
+    private String connectionParams;
+
+    @TableField("user_id")
+    private Integer userId;
+
+    @TableField("create_time")
+    private Date createTime;
+
+    @TableField("update_time")
+    private Date updateTime;
 }

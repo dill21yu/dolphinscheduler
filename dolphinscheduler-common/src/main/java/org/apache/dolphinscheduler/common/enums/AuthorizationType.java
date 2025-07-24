@@ -63,6 +63,7 @@ public enum AuthorizationType {
     ALERT_PLUGIN_INSTANCE(14, "alert plugin instance"),
     TENANT(15, "tenant"),
     TASK_GROUP(17, "task group"),
+    EXTERNALSYSTEM(18, "external system"),
     ;
 
     AuthorizationType(int code, String descp) {
