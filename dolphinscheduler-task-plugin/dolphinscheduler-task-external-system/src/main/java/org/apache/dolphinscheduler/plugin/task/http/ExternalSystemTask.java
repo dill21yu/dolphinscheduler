@@ -152,7 +152,8 @@ public class ExternalSystemTask extends AbstractTask {
                         headeMap.put(param.getParamName(), value);
                         break;
                     case "BODY":
-                        requestBody= JSONUtils.parseObject(replaceParameterPlaceholders(submitConfig.getHttpBody()), Map.class);
+                        requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(submitConfig.getHttpBody()),
+                                Map.class);
                         break;
                     case "PARAM":
                         requestParams.put(param.getParamName(), value);
@@ -250,7 +251,8 @@ public class ExternalSystemTask extends AbstractTask {
                         headeMap.put(param.getParamName(), value);
                         break;
                     case "BODY":
-                        requestBody= JSONUtils.parseObject(replaceParameterPlaceholders(pollConfig.getHttpBody()), Map.class);
+                        requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(pollConfig.getHttpBody()),
+                                Map.class);
                         break;
                     case "PARAM":
                         requestParams.put(param.getParamName(), value);
@@ -310,7 +312,8 @@ public class ExternalSystemTask extends AbstractTask {
                         headeMap.put(param.getParamName(), value);
                         break;
                     case "BODY":
-                        requestBody= JSONUtils.parseObject(replaceParameterPlaceholders(stopConfig.getHttpBody()), Map.class);
+                        requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(stopConfig.getHttpBody()),
+                                Map.class);
                         break;
                     case "PARAM":
                         requestParams.put(param.getParamName(), value);
