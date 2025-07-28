@@ -154,17 +154,17 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     @Override
     public boolean testExternalSystemConnection(User loginUser, BaseExternalSystemParams baseExternalSystemParam) {
         try {
-            OkHttpResponse response= callSelectInterface(baseExternalSystemParam);
+            OkHttpResponse response = callSelectInterface(baseExternalSystemParam);
             if (response.getStatusCode() == 200) {
                 return true;
             }
         } catch (Exception e) {
-            log.error("connect error,e:{}",e.getMessage());
+            log.error("connect error,e:{}", e.getMessage());
         }
         throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_FAILED);
     }
-    
-    private  OkHttpResponse callSelectInterface( BaseExternalSystemParams baseExternalSystemParam){
+
+    private OkHttpResponse callSelectInterface(BaseExternalSystemParams baseExternalSystemParam) {
         try {
             BaseExternalSystemParams.InterfaceConfig selectConfig = baseExternalSystemParam.getSelectInterface();
 
@@ -330,12 +330,12 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             throw new IllegalStateException("External field mapping for 'id' and 'name' not found");
         }
 
-            OkHttpResponse selectResponse= callSelectInterface(baseExternalSystemParam);
-            if (selectResponse.getStatusCode() != 200) {
-                throw new TaskException("Select task failed: " + selectResponse.getBody());
-            }
-            // 解析响应获取id name
-            return parseSelectResponse(selectResponse.getBody(), taskIdExpression, taskNameExpression);
+        OkHttpResponse selectResponse = callSelectInterface(baseExternalSystemParam);
+        if (selectResponse.getStatusCode() != 200) {
+            throw new TaskException("Select task failed: " + selectResponse.getBody());
+        }
+        // 解析响应获取id name
+        return parseSelectResponse(selectResponse.getBody(), taskIdExpression, taskNameExpression);
 
     }
 
