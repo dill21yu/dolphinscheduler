@@ -190,11 +190,19 @@ export function useDataList() {
         ]
       },
       {
-        label: () =>
-          h(NEllipsis, null, { default: () => t('menu.datasource') }),
-        key: 'datasource',
+        label: () => h(NEllipsis, null, { default: () => t('menu.datasource') }),
+        key: 'source-center',
         icon: renderIcon(DatabaseOutlined),
-        children: []
+        children: [
+          {
+            label: t('menu.datasource'),
+            key: '/source-center/datasource'
+          },
+          {
+            label: t('thirdparty_api_source.thirdparty_api_source'),
+            key: '/source-center/thirdparty-api-source'
+          }
+        ]
       },
       {
         label: () => h(NEllipsis, null, { default: () => t('menu.monitor') }),

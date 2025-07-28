@@ -1,0 +1,13 @@
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding: 16px 0 0 0;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.modal-footer :global(.n-space) {
+  margin-right: 15px;
+}
