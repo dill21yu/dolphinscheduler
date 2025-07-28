@@ -22,6 +22,7 @@ import static org.apache.dolphinscheduler.api.enums.Status.CREATE_USER_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.DELETE_USER_BY_ID_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.GET_USER_INFO_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.GRANT_DATASOURCE_ERROR;
+import static org.apache.dolphinscheduler.api.enums.Status.GRANT_EXTERNALSYSTEM_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.GRANT_K8S_NAMESPACE_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.GRANT_PROJECT_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.QUERY_USER_LIST_PAGING_ERROR;
@@ -364,6 +365,29 @@ public class UsersController extends BaseController {
                                   @RequestParam(value = "userId") int userId,
                                   @RequestParam(value = "datasourceIds") String datasourceIds) {
         Map<String, Object> result = usersService.grantDataSource(loginUser, userId, datasourceIds);
+        return returnDataList(result);
+    }
+
+    /**
+     * grant externalSystem
+     *
+     * @param loginUser     login user
+     * @param userId        user id
+     * @param externalSystemIds data source id array
+     * @return grant result code
+     */
+    @Operation(summary = "grantExternalSystem", description = "GRANT_EXTERNALSYSTEM_NOTES")
+    @Parameters({
+            @Parameter(name = "userId", description = "USER_ID", required = true, schema = @Schema(implementation = int.class, example = "100")),
+            @Parameter(name = "externalSystemIds", description = "EXTERNALSYSTEM_IDS", required = true, schema = @Schema(implementation = String.class))
+    })
+    @PostMapping(value = "/grant-externalSystem")
+    @ResponseStatus(HttpStatus.OK)
+    @ApiException(GRANT_EXTERNALSYSTEM_ERROR)
+    public Result grantExternalSystem(@Parameter(hidden = true) @RequestAttribute(value = Constants.SESSION_USER) User loginUser,
+                                      @RequestParam(value = "userId") int userId,
+                                      @RequestParam(value = "externalSystemIds") String externalSystemIds) {
+        Map<String, Object> result = usersService.grantExternalSystem(loginUser, userId, externalSystemIds);
         return returnDataList(result);
     }
 

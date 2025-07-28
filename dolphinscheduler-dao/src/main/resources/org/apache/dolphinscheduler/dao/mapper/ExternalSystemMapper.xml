@@ -20,7 +20,7 @@
 <mapper namespace="org.apache.dolphinscheduler.dao.mapper.ExternalSystemMapper">
 
     <sql id="baseSql">
-        id, name, type, connection_params, user_id, create_time, update_time
+        id, name, connection_params, user_id, create_time, update_time
     </sql>
 
     <select id="queryBySystemName" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
@@ -43,7 +43,7 @@
     </select>
 
     <select id="selectPaging" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
-        select e.id, e.name, e.type, e.user_id, e.connection_params, e.create_time, e.update_time,
+        select e.id, e.name,  e.user_id, e.connection_params, e.create_time, e.update_time,
         u.user_name as user_name
         from t_ds_external_system e
         join t_ds_user u on e.user_id = u.id
@@ -61,6 +61,18 @@
         order by e.update_time desc
     </select>
 
+    <select id="queryAuthedExternalSystem" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
+        select ds.id, ds.name,  ds.user_id, ds.connection_params, ds.create_time, ds.update_time
+        from t_ds_external_system ds, t_ds_relation_external_system_user rel
+        where ds.id = rel.external_system_id AND rel.user_id = #{userId}
+    </select>
+
+    <select id="queryExternalSystemExceptUserId" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
+        select
+        <include refid="baseSql"/>
+        from t_ds_external_system
+        where user_id <![CDATA[ <> ]]> #{userId}
+    </select>
 
 
 </mapper>

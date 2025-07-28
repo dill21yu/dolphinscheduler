@@ -34,6 +34,7 @@ import org.apache.dolphinscheduler.common.enums.UserType;
 import org.apache.dolphinscheduler.common.utils.EncryptionUtils;
 import org.apache.dolphinscheduler.dao.entity.AlertGroup;
 import org.apache.dolphinscheduler.dao.entity.DatasourceUser;
+import org.apache.dolphinscheduler.dao.entity.ExternalSystemUser;
 import org.apache.dolphinscheduler.dao.entity.K8sNamespaceUser;
 import org.apache.dolphinscheduler.dao.entity.Project;
 import org.apache.dolphinscheduler.dao.entity.ProjectUser;
@@ -42,6 +43,7 @@ import org.apache.dolphinscheduler.dao.entity.User;
 import org.apache.dolphinscheduler.dao.mapper.AccessTokenMapper;
 import org.apache.dolphinscheduler.dao.mapper.AlertGroupMapper;
 import org.apache.dolphinscheduler.dao.mapper.DataSourceUserMapper;
+import org.apache.dolphinscheduler.dao.mapper.ExternalSystemUserMapper;
 import org.apache.dolphinscheduler.dao.mapper.K8sNamespaceUserMapper;
 import org.apache.dolphinscheduler.dao.mapper.ProjectMapper;
 import org.apache.dolphinscheduler.dao.mapper.ProjectUserMapper;
@@ -96,6 +98,9 @@ public class UsersServiceImpl extends BaseServiceImpl implements UsersService {
 
     @Autowired
     private DataSourceUserMapper datasourceUserMapper;
+
+    @Autowired
+    private ExternalSystemUserMapper externalSystemUserMapper;
 
     @Autowired
     private AlertGroupMapper alertGroupMapper;
@@ -843,6 +848,60 @@ public class UsersServiceImpl extends BaseServiceImpl implements UsersService {
             datasourceUser.setCreateTime(now);
             datasourceUser.setUpdateTime(now);
             datasourceUserMapper.insert(datasourceUser);
+        }
+
+        putMsg(result, Status.SUCCESS);
+
+        return result;
+    }
+
+    /**
+     * grant externalSystem
+     *
+     * @param loginUser     login user
+     * @param userId        user id
+     * @param externalSystemIds data source id array
+     * @return grant result code
+     */
+    @Override
+    @Transactional
+    public Map<String, Object> grantExternalSystem(User loginUser, int userId, String externalSystemIds) {
+        Map<String, Object> result = new HashMap<>();
+        result.put(Constants.STATUS, false);
+
+        if (resourcePermissionCheckService.functionDisabled()) {
+            putMsg(result, Status.FUNCTION_DISABLED);
+            return result;
+        }
+        // only admin can operate
+        if (this.check(result, !this.isAdmin(loginUser), Status.USER_NO_OPERATION_PERM)) {
+            log.warn("Only admin can grant externalSystem.");
+            return result;
+        }
+        User user = userMapper.selectById(userId);
+        if (user == null) {
+            putMsg(result, Status.USER_NOT_EXIST, userId);
+            return result;
+        }
+
+        externalSystemUserMapper.deleteByUserId(userId);
+
+        if (check(result, StringUtils.isEmpty(externalSystemIds), Status.SUCCESS)) {
+            return result;
+        }
+
+        String[] externalSystemIdArr = externalSystemIds.split(",");
+
+        for (String externalSystemId : externalSystemIdArr) {
+            Date now = new Date();
+
+            ExternalSystemUser externalSystemUser = new ExternalSystemUser();
+            externalSystemUser.setUserId(userId);
+            externalSystemUser.setExternalSystemId(Integer.parseInt(externalSystemId));
+            externalSystemUser.setPerm(Constants.AUTHORIZE_WRITABLE_PERM);
+            externalSystemUser.setCreateTime(now);
+            externalSystemUser.setUpdateTime(now);
+            externalSystemUserMapper.insert(externalSystemUser);
         }
 
         putMsg(result, Status.SUCCESS);

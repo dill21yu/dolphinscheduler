@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,7 +247,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     }
 
     @Override
-    public List<ExternalSystem> queryDataSourceList(User loginUser) {
+    public List<ExternalSystem> queryExternalSystemList(User loginUser) {
         List<ExternalSystem> externalSystemList;
         if (loginUser.getUserType().equals(UserType.ADMIN_USER)) {
             externalSystemList = externalSystemMapper.selectList(0);
@@ -262,7 +263,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     }
 
     /**
-     * handle datasource connection password for safety
+     * handle externalSystem connection password for safety
      */
     public void hideSensitiveInformation(List<ExternalSystem> externalSystems) {
         for (ExternalSystem externalSystem : externalSystems) {
@@ -365,6 +366,54 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             throw new TaskException("Parse select response failed", e);
         }
         return resultList;
+    }
+
+    /**
+     * unauthorized externalSystem
+     *
+     * @param loginUser login user
+     * @param userId user id
+     * @return unauthed data source result code
+     */
+    @Override
+    public List<ExternalSystem> unAuthExternalSystem(User loginUser, Integer userId) {
+        List<ExternalSystem> externalSystemList;
+        if (canOperatorPermissions(loginUser, null, AuthorizationType.EXTERNALSYSTEM, null)) {
+            // admin gets all data sources except userId
+            externalSystemList = externalSystemMapper.queryExternalSystemExceptUserId(userId);
+        } else {
+            // non-admins users get their own data sources
+            externalSystemList =
+                    externalSystemMapper.selectByMap(Collections.singletonMap("user_id", loginUser.getId()));
+        }
+        List<ExternalSystem> resultList = new ArrayList<>();
+        Set<ExternalSystem> externalSystemSet;
+        if (externalSystemList != null && !externalSystemList.isEmpty()) {
+            externalSystemSet = new HashSet<>(externalSystemList);
+
+            List<ExternalSystem> authedExternalSystemList = externalSystemMapper.queryAuthedExternalSystem(userId);
+
+            Set<ExternalSystem> authedExternalSystemSet;
+            if (authedExternalSystemList != null && !authedExternalSystemList.isEmpty()) {
+                authedExternalSystemSet = new HashSet<>(authedExternalSystemList);
+                externalSystemSet.removeAll(authedExternalSystemSet);
+            }
+            resultList = new ArrayList<>(externalSystemSet);
+        }
+        return resultList;
+    }
+
+    /**
+     * authorized externalSystem
+     *
+     * @param loginUser login user
+     * @param userId user id
+     * @return authorized result code
+     */
+    @Override
+    public List<ExternalSystem> authedExternalSystem(User loginUser, Integer userId) {
+        List<ExternalSystem> authedExternalSystemList = externalSystemMapper.queryAuthedExternalSystem(userId);
+        return authedExternalSystemList;
     }
 
 }
