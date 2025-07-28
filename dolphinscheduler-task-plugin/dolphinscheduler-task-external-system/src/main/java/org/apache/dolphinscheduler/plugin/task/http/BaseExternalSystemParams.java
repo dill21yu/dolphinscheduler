@@ -71,7 +71,7 @@ public class BaseExternalSystemParams {
     }
 
     public enum AuthType {
-        BASIC, JWT, OAUTH2
+        BASIC_AUTH, JWT, OAUTH2
     }
 
     @Data
@@ -79,7 +79,7 @@ public class BaseExternalSystemParams {
 
         private String url;
         private HttpMethod method; // 请求方式 GET/POST
-        private String body;
+        private String httpBody;
         private List<RequestParameter> parameters; // 参数列表
     }
 
@@ -124,7 +124,7 @@ public class BaseExternalSystemParams {
 
     // 枚举：参数位置
     public enum ParamLocation {
-        HEADER, PARAM, BODY
+        HEADER, PARAM
     }
 
     @Data
