@@ -17,10 +17,12 @@
 
 package org.apache.dolphinscheduler.api.controller;
 
+import static org.apache.dolphinscheduler.api.enums.Status.AUTHORIZED_EXTERNAL_SYSTEM;
 import static org.apache.dolphinscheduler.api.enums.Status.CREATE_EXTERNAL_SYSTEM_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.DELETE_EXTERNAL_SYSTEM_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.QUERY_EXTERNAL_SYSTEM_ERROR;
 import static org.apache.dolphinscheduler.api.enums.Status.TEST_EXTERNAL_SYSTEM_CONNECTION_ERROR;
+import static org.apache.dolphinscheduler.api.enums.Status.UNAUTHORIZED_EXTERNAL_SYSTEM;
 import static org.apache.dolphinscheduler.api.enums.Status.UPDATE_EXTERNAL_SYSTEM_ERROR;
 
 import org.apache.dolphinscheduler.api.audit.OperatorLog;
@@ -182,7 +184,7 @@ public class ExternalSystemController extends BaseController {
     }
 
     /**
-     * query datasource by type
+     * query externalSystem by type
      *
      * @param loginUser login user
      * @return data source list page
@@ -191,9 +193,9 @@ public class ExternalSystemController extends BaseController {
     @GetMapping(value = "/queryExternalSystemList")
     @ResponseStatus(HttpStatus.OK)
     @ApiException(QUERY_EXTERNAL_SYSTEM_ERROR)
-    public Result<Object> queryDataSourceList(@Parameter(hidden = true) @RequestAttribute(value = Constants.SESSION_USER) User loginUser) {
-        List<ExternalSystem> datasourceList = externalSystemService.queryDataSourceList(loginUser);
-        return Result.success(datasourceList);
+    public Result<Object> queryExternalSystemList(@Parameter(hidden = true) @RequestAttribute(value = Constants.SESSION_USER) User loginUser) {
+        List<ExternalSystem> externalSystemList = externalSystemService.queryExternalSystemList(loginUser);
+        return Result.success(externalSystemList);
     }
 
     /**
@@ -226,6 +228,46 @@ public class ExternalSystemController extends BaseController {
         List<ExternalSystemTaskQuery> result =
                 externalSystemService.queryExternalSystemTasks(loginUser, externalSystemId);
         return Result.success(result);
+    }
+    /**
+     * unauthorized externalSystem
+     *
+     * @param loginUser login user
+     * @param userId user id
+     * @return unauthorized data source result code
+     */
+    @Operation(summary = "unauthorizedExternalSystem", description = "UNAUTHORIZED_DATA_SOURCE_NOTES")
+    @Parameters({
+            @Parameter(name = "userId", description = "USER_ID", required = true, schema = @Schema(implementation = int.class, example = "100"))
+    })
+    @GetMapping(value = "/unauth-externalSystem")
+    @ResponseStatus(HttpStatus.OK)
+    @ApiException(UNAUTHORIZED_EXTERNAL_SYSTEM)
+    public Result<Object> unAuthExternalSystem(@Parameter(hidden = true) @RequestAttribute(value = Constants.SESSION_USER) User loginUser,
+                                               @RequestParam("userId") Integer userId) {
+
+        List<ExternalSystem> unAuthExternalSystemList = externalSystemService.unAuthExternalSystem(loginUser, userId);
+        return Result.success(unAuthExternalSystemList);
+    }
+
+    /**
+     * authorized externalSystem
+     *
+     * @param loginUser login user
+     * @param userId user id
+     * @return authorized result code
+     */
+    @Operation(summary = "authedExternalSystem", description = "AUTHORIZED_DATA_SOURCE_NOTES")
+    @Parameters({
+            @Parameter(name = "userId", description = "USER_ID", required = true, schema = @Schema(implementation = int.class, example = "100"))
+    })
+    @GetMapping(value = "/authed-externalSystem")
+    @ResponseStatus(HttpStatus.OK)
+    @ApiException(AUTHORIZED_EXTERNAL_SYSTEM)
+    public Result<Object> authExternalSystem(@Parameter(hidden = true) @RequestAttribute(value = Constants.SESSION_USER) User loginUser,
+                                             @RequestParam("userId") Integer userId) {
+        List<ExternalSystem> authExternalSystemList = externalSystemService.authedExternalSystem(loginUser, userId);
+        return Result.success(authExternalSystemList);
     }
 
 }
