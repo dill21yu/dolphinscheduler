@@ -29,9 +29,11 @@ import project from '@/locales/zh_CN/project'
 import resource from '@/locales/zh_CN/resource'
 import security from '@/locales/zh_CN/security'
 import theme from '@/locales/zh_CN/theme'
+import thirdparty_api_source from '@/locales/zh_CN/thirdparty-api-source'
 import user_dropdown from '@/locales/zh_CN/user-dropdown'
 import ui_setting from '@/locales/zh_CN/ui_setting'
 import about from '@/locales/zh_CN/about'
+import message from '@/locales/zh_CN/message'
 
 export default {
   login,
@@ -48,7 +50,9 @@ export default {
   project,
   security,
   datasource,
+  thirdparty_api_source,
   crontab,
   ui_setting,
-  input_search
+  input_search,
+  message
 }

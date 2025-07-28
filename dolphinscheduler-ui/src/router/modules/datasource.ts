@@ -23,10 +23,10 @@ const modules = import.meta.glob('/src/views/**/**.tsx')
 const components: { [key: string]: Component } = utils.mapping(modules)
 
 export default {
-  path: '/datasource',
+  path: 'datasource',
   name: 'datasource',
   meta: { title: '数据源中心' },
-  component: () => import('@/layouts/content'),
+  // component: () => import('@/layouts/content'),
   children: [
     {
       path: '',
@@ -34,8 +34,9 @@ export default {
       component: components['datasource-list'],
       meta: {
         title: '数据源中心',
-        activeMenu: 'datasource',
-        showSide: false,
+        activeMenu: 'source-center',
+        activeSide: '/source-center/datasource',
+        showSide: true,
         auth: []
       }
     }
