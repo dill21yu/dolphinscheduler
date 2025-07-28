@@ -48,7 +48,7 @@ public class AuthenticationUtils {
         }
 
         switch (authConfig.getAuthType()) {
-            case BASIC:
+            case BASIC_AUTH:
                 // 基础认证
                 String auth = authConfig.getBasicUsername() + ":" + authConfig.getBasicPassword();
                 String encoding = java.util.Base64.getEncoder().encodeToString(auth.getBytes());

@@ -138,6 +138,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         }
         BaseExternalSystemParams baseExternalSystemParam =
                 JSONUtils.parseObject(externalSystem.getConnectionParams(), BaseExternalSystemParams.class);
+        baseExternalSystemParam.setId(id);
 
         // 权限检查 (如果需要)
         // (loginUser, externalSystem);
@@ -151,19 +152,72 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     }
 
     @Override
-    public boolean testExternalSystemConnection(User loginUser, BaseExternalSystemParams externalSystemParam) {
-        // 验证参数格式
-        // ExternalSystemUtils.checkExternalSystemParam(externalSystemParam);
-        // 解析 connectionParams 为 BaseExternalSystemParamDTO
-        // BaseExternalSystemParamDTO registration = JSONUtils.parseObject(externalSystemParam.getConnectionParams(),
-        // BaseExternalSystemParamDTO.class);
-        // if (registration == null) {
-        // throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_FAILED, "Invalid connection parameters format.");
-        // }
-        // 调用具体处理器的测试连接方法
-        // return ExternalSystemUtils.getExternalSystemProcessor(externalSystemParam.getType())
-        // .testConnection(registration);
-        return true;
+    public boolean testExternalSystemConnection(User loginUser, BaseExternalSystemParams baseExternalSystemParam) {
+        try {
+            OkHttpResponse response= callSelectInterface(baseExternalSystemParam);
+            if (response.getStatusCode() == 200) {
+                return true;
+            }
+        } catch (Exception e) {
+            log.error("connect error,e:{}",e.getMessage());
+        }
+        throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_FAILED);
+    }
+    
+    private  OkHttpResponse callSelectInterface( BaseExternalSystemParams baseExternalSystemParam){
+        try {
+            BaseExternalSystemParams.InterfaceConfig selectConfig = baseExternalSystemParam.getSelectInterface();
+
+            // 替换参数占位符
+            String url = selectConfig.getUrl();
+
+            OkHttpRequestHeaders headers = new OkHttpRequestHeaders();
+            headers.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_JSON);
+
+            Map<String, String> headeMap = new HashMap<>();
+            Map<String, Object> requestBody = new HashMap<>();
+            Map<String, Object> requestParams = new HashMap<>();
+            String token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam.getAuthConfig());
+
+            headeMap.put("Authorization", token);
+            // 处理参数
+            for (BaseExternalSystemParams.RequestParameter param : selectConfig.getParameters()) {
+                // todo String value = replaceParameterPlaceholders(param.getParamValue());
+                String value = param.getParamValue();
+
+                switch (param.getLocation().name()) {
+                    case "HEADER":
+                        headeMap.put(param.getParamName(), value);
+                        break;
+                    case "BODY":
+                        if ("body".equals(param.getParamName())) {
+                            requestBody = JSONUtils.parseObject(value, Map.class);
+                        }
+
+                        break;
+                    case "PARAM":
+                        requestParams.put(param.getParamName(), value);
+                        break;
+                }
+            }
+            if (!headeMap.isEmpty()) {
+                headers.setHeaders(headeMap);
+            }
+
+            OkHttpResponse response;
+            if (BaseExternalSystemParams.HttpMethod.POST.equals(selectConfig.getMethod())) {
+                response = OkHttpUtils.post(url, headers, requestParams, requestBody, 120000, 120000, 120000);
+            } else if (BaseExternalSystemParams.HttpMethod.PUT.equals(selectConfig.getMethod())) {
+                response = OkHttpUtils.put(url, headers, requestBody, 120000, 120000, 120000);
+            } else {
+                response = OkHttpUtils.get(url, headers, requestParams, 120000, 120000, 120000);
+            }
+            return response;
+
+        } catch (Exception e) {
+            log.error("select task failed", e);
+            throw new TaskException("select task failed", e);
+        }
     }
 
     @Override
@@ -276,65 +330,13 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             throw new IllegalStateException("External field mapping for 'id' and 'name' not found");
         }
 
-        try {
-            BaseExternalSystemParams.InterfaceConfig selectConfig = baseExternalSystemParam.getSelectInterface();
-
-            // 替换参数占位符
-            String url = selectConfig.getUrl();
-
-            OkHttpRequestHeaders headers = new OkHttpRequestHeaders();
-            headers.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_JSON);
-
-            Map<String, String> headeMap = new HashMap<>();
-            Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> requestParams = new HashMap<>();
-            String token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam.getAuthConfig());
-
-            headeMap.put("Authorization", token);
-            // 处理参数
-            for (BaseExternalSystemParams.RequestParameter param : selectConfig.getParameters()) {
-                // todo String value = replaceParameterPlaceholders(param.getParamValue());
-                String value = param.getParamValue();
-
-                switch (param.getLocation().name()) {
-                    case "HEADER":
-                        headeMap.put(param.getParamName(), value);
-                        break;
-                    case "BODY":
-                        if ("body".equals(param.getParamName())) {
-                            requestBody = JSONUtils.parseObject(value, Map.class);
-                        }
-
-                        break;
-                    case "PARAM":
-                        requestParams.put(param.getParamName(), value);
-                        break;
-                }
+            OkHttpResponse selectResponse= callSelectInterface(baseExternalSystemParam);
+            if (selectResponse.getStatusCode() != 200) {
+                throw new TaskException("Select task failed: " + selectResponse.getBody());
             }
-            if (!headeMap.isEmpty()) {
-                headers.setHeaders(headeMap);
-            }
-
-            OkHttpResponse response;
-            if (BaseExternalSystemParams.HttpMethod.POST.equals(selectConfig.getMethod())) {
-                response = OkHttpUtils.post(url, headers, requestParams, requestBody, 120000, 120000, 120000);
-            } else if (BaseExternalSystemParams.HttpMethod.PUT.equals(selectConfig.getMethod())) {
-                response = OkHttpUtils.put(url, headers, requestBody, 120000, 120000, 120000);
-            } else {
-                response = OkHttpUtils.get(url, headers, requestParams, 120000, 120000, 120000);
-            }
-
-            if (response.getStatusCode() != 200) {
-                throw new TaskException("Select task failed: " + response.getBody());
-            }
-
             // 解析响应获取id name
-            return parseSelectResponse(response.getBody(), taskIdExpression, taskNameExpression);
+            return parseSelectResponse(selectResponse.getBody(), taskIdExpression, taskNameExpression);
 
-        } catch (Exception e) {
-            log.error("select task failed", e);
-            throw new TaskException("select task failed", e);
-        }
     }
 
     private List<ExternalSystemTaskQuery> parseSelectResponse(String responseBody, String taskIdExpression,
