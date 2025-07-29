@@ -76,8 +76,8 @@ export default defineComponent({
           successValue: ''
         },
         pollingFailureConfig: {
-          successField: '',
-          successValue: ''
+          failureField: '',
+          failureValue: ''
         }
       },
       stopInterface: {
@@ -226,7 +226,7 @@ export default defineComponent({
           pollStatusInterface: {
             url: '', method: 'GET', parameters: [], body: '',
             pollingSuccessConfig: { successField: '', successValue: '' },
-            pollingFailureConfig: { successField: '', successValue: '' }
+            pollingFailureConfig: { failureField: '', failureValue: '' }
           },
           stopInterface: { url: '', method: 'POST', parameters: [], body: '' }
         })
@@ -419,8 +419,8 @@ export default defineComponent({
               <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.success_value_tips')} class={styles['condition-value']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.failure_condition')}>
-              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.successField, 'value']} placeholder={t('thirdparty_api_source.failure_field_tips')} class={styles['condition-field']} />
-              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.failure_value_tips')} class={styles['condition-value']} />
+              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.failureField, 'value']} placeholder={t('thirdparty_api_source.failure_field_tips')} class={styles['condition-field']} />
+              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.failureValue, 'value']} placeholder={t('thirdparty_api_source.failure_value_tips')} class={styles['condition-value']} />
             </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.stop_interface')} path="stopInterface.url" required>

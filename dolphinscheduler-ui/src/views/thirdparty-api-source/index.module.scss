@@ -95,67 +95,56 @@
 // 参数输入框样式
 .param-location {
   width: 100px;
-  flex-shrink: 0;
 }
 
 .param-name {
   width: 120px;
-  flex-shrink: 0;
 }
 
 .param-value {
   width: 120px;
-  flex-shrink: 0;
 }
 
 .param-value-small {
   width: 100px;
-  flex-shrink: 0;
 }
 
 // 方法选择器样式
 .method-select {
   width: 120px;
-  flex-shrink: 0;
 }
 
 // 认证类型选择器样式
 .auth-type-select {
   width: 120px;
-  flex-shrink: 0;
 }
 
 // 成功/失败条件输入框样式
 .condition-field {
   width: 50%;
-  flex-shrink: 0;
+  margin-left: 8px;
 }
 
 .condition-value {
   width: 50%;
   margin-left: 8px;
-  flex-shrink: 0;
 }
 
 // 提交接口URL输入框样式
 .submit-url {
   margin-bottom: 8px;
-  flex-shrink: 0;
 }
 
 .submit-method {
   width: 120px;
   margin-bottom: 8px;
-  flex-shrink: 0;
 }
 
 // 键值对输入框样式
 .key-input {
   width: 150px;
-  flex-shrink: 0;
 }
 
 .value-input {
   width: 150px;
-  flex-shrink: 0;
 }
