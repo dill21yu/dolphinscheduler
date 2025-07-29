@@ -40,7 +40,11 @@ export default defineComponent({
     const form = reactive({
       systemName: '',
       serviceAddress: '',
-      fieldMappings: [] as any[],
+      fieldMappings: [
+        { externalField: 'id', internalField: '' },
+        { externalField: 'name', internalField: '' },
+        { externalField: 'taskInstanceId', internalField: '' }
+      ],
       authConfig: {
         authType: 'BASIC_AUTH',
         basicUsername: '',
@@ -207,7 +211,11 @@ export default defineComponent({
         Object.assign(form, {
           systemName: '',
           serviceAddress: '',
-          fieldMappings: [],
+          fieldMappings: [
+            { externalField: 'id', internalField: '' },
+            { externalField: 'name', internalField: '' },
+            { externalField: 'taskInstanceId', internalField: '' }
+          ],
           authConfig: {
             authType: 'BASIC_AUTH',
             basicUsername: '',

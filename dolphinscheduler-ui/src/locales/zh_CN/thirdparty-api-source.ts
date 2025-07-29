@@ -48,13 +48,13 @@ export default {
 
   // 接口配置
   interface_config: '接口配置',
-  input_interface: '入参接口',
+  input_interface: '查询任务列表接口',
   input_interface_tips: '请输入接口地址',
-  submit_interface: '提交接口',
+  submit_interface: '启动任务接口',
   submit_interface_tips: '请输入接口地址',
-  query_interface: '查询接口',
+  query_interface: '查询任务状态接口',
   query_interface_tips: '请输入接口地址',
-  stop_interface: '停止接口',
+  stop_interface: '停止任务接口',
   stop_interface_tips: '请输入接口地址',
   parameters: '参数',
   param_location: '参数位置',
