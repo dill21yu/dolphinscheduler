@@ -17,33 +17,29 @@
 
 package org.apache.dolphinscheduler.dao.mapper;
 
-import org.apache.dolphinscheduler.dao.entity.ExternalSystem;
+import org.apache.dolphinscheduler.dao.entity.ExternalSystemUser;
 
-import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
-import java.util.List;
-
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import com.baomidou.mybatisplus.core.metadata.IPage;
 
-@Mapper
-public interface ExternalSystemMapper extends BaseMapper<ExternalSystem> {
-
-    /**
-     * 根据名称查询外部系统
-     */
-    ExternalSystem queryBySystemName(@Param("name") String name);
+/**
+ * externalSystem user realtion mapper interface
+ */
+public interface ExternalSystemUserMapper extends BaseMapper<ExternalSystemUser> {
 
     /**
-     * 根据用户ID查询有权限的外部系统列表
+     * delete externalSystem by userId
+     * @param userId userId
+     * @return delete result
      */
-    List<ExternalSystem> selectList(@Param("userId") Integer userId);
+    int deleteByUserId(@Param("userId") int userId);
 
     /**
-     * 分页查询外部系统列表
+     * delete externalSystem by id
+     * @param externalSystemId externalSystemId
+     * @return delete result
      */
-    IPage<ExternalSystem> selectPaging(IPage<ExternalSystem> page,
-                                       @Param("name") String name,
-                                       @Param("userId") Integer userId);
+    int deleteByExternalSystemId(@Param("externalSystemId") int externalSystemId);
 
+}

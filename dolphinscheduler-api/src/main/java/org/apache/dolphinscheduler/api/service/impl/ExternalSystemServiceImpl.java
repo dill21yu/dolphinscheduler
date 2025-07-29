@@ -42,6 +42,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -246,7 +247,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     }
 
     @Override
-    public List<ExternalSystem> queryDataSourceList(User loginUser) {
+    public List<ExternalSystem> queryExternalSystemList(User loginUser) {
         List<ExternalSystem> externalSystemList;
         if (loginUser.getUserType().equals(UserType.ADMIN_USER)) {
             externalSystemList = externalSystemMapper.selectList(0);
@@ -262,7 +263,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     }
 
     /**
-     * handle datasource connection password for safety
+     * handle externalSystem connection password for safety
      */
     public void hideSensitiveInformation(List<ExternalSystem> externalSystems) {
         for (ExternalSystem externalSystem : externalSystems) {
@@ -364,7 +365,3 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             log.error("Parse select response failed", e);
             throw new TaskException("Parse select response failed", e);
         }
-        return resultList;
-    }
-
-}

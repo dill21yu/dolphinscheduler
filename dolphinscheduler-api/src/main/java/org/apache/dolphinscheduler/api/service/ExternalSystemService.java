@@ -58,7 +58,7 @@ public interface ExternalSystemService {
      * @param loginUser
      * @return
      */
-    List<ExternalSystem> queryDataSourceList(User loginUser);
+    List<ExternalSystem> queryExternalSystemList(User loginUser);
 
     /**
      * delete external system
@@ -67,4 +67,3 @@ public interface ExternalSystemService {
 
     List<ExternalSystemTaskQuery> queryExternalSystemTasks(User loginUser, int externalSystemId);
 
-}
