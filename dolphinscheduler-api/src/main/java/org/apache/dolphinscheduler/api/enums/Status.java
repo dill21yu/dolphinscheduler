@@ -616,4 +616,14 @@ public enum Status {
     }
 
     /**
-     * Retrieve Status enum entity by
+     * Retrieve Status enum entity by status code.
+     */
+    public static Optional<Status> findStatusBy(int code) {
+        for (Status status : Status.values()) {
+            if (code == status.getCode()) {
+                return Optional.of(status);
+            }
+        }
+        return Optional.empty();
+    }
+}
