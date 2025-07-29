@@ -32,6 +32,12 @@ import {
   revokeProjectById
 } from '@/service/modules/users'
 import type { IOption, IRecord, IResourceOption, TAuthType } from '../types'
+// === 新增引入 ===
+import {
+  authedThirdpartySystem,
+  unAuthThirdpartySystem,
+  grantThirdpartySystem
+} from '@/service/modules/thirdparty-api-source'
 
 export function useAuthorize() {
   const state = reactive({
@@ -46,6 +52,9 @@ export function useAuthorize() {
     unauthorizedDatasources: [] as IOption[],
     authorizedNamespaces: [] as number[],
     unauthorizedNamespaces: [] as IOption[],
+    // === 新增 ===
+    authorizedThirdparty: [] as number[],
+    unauthorizedThirdparty: [] as IOption[],
     resourceType: 'file',
     fileResources: [] as IResourceOption[],
     pagination: {
@@ -156,6 +165,24 @@ export function useAuthorize() {
     )
   }
 
+  // === 新增：第三方系统授权相关 ===
+  const getThirdpartySystems = async (userId: number) => {
+    if (state.loading) return
+    state.loading = true
+    const systems = await Promise.all([
+      authedThirdpartySystem({ userId }),
+      unAuthThirdpartySystem({ userId })
+    ])
+    state.loading = false
+    state.authorizedThirdparty = systems[0].map((item: { id: number }) => item.id)
+    state.unauthorizedThirdparty = [...systems[0], ...systems[1]].map(
+      (item: { name: string; id: number }) => ({
+        label: item.name,
+        value: item.id
+      })
+    )
+  }
+
   const onInit = (type: TAuthType, userId: number) => {
     if (type === 'authorize_project') {
       getProjects(userId)
@@ -166,11 +193,13 @@ export function useAuthorize() {
     if (type === 'authorize_namespace') {
       getNamespaces(userId)
     }
+    // === 新增 ===
+    if (type === 'authorize_thirdparty') {
+      getThirdpartySystems(userId)
+    }
   }
 
-  /*
-    getParent
-  */
+
   const onSave = async (type: TAuthType, userId: number) => {
     if (state.saving) return false
     state.saving = true
@@ -186,6 +215,13 @@ export function useAuthorize() {
         namespaceIds: state.authorizedNamespaces.join(',')
       })
     }
+    // === 新增 ===
+    if (type === 'authorize_thirdparty') {
+      await grantThirdpartySystem({
+        userId,
+        externalSystemIds: state.authorizedThirdparty.join(',')
+      })
+    }
     state.saving = false
     return true
   }
@@ -199,6 +235,7 @@ export function useAuthorize() {
     grantProjectRequest,
     grantProjectWithReadPermRequest,
     requestData,
-    handleChangePageSize
+    handleChangePageSize,
+    getThirdpartySystems // 可选
   }
 }
