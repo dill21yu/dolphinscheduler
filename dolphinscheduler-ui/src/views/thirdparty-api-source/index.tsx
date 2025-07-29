@@ -52,8 +52,7 @@ export default defineComponent({
     }
 
     const handleDelete = async (row: ThirdpartyApiSource) => {
-      const res = await deleteThirdpartyApiSource(row.id!)
-      window.$message.success(t('message.delete.success'))
+      await deleteThirdpartyApiSource(row.id!)
       await getTableData()
     }
 
@@ -171,7 +170,7 @@ export default defineComponent({
               size='small'
               onClick={handleCreate}
             >
-              {t('thirdparty_api_source.create')}
+              {t('thirdparty_api_source.create_thirdparty_api_source')}
             </NButton>
             <NSpace>
               <Search
