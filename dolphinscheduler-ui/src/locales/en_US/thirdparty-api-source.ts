@@ -14,6 +14,8 @@ export default {
   field_mapping: 'Field Mapping',
   external_field: 'External Field',
   internal_field: 'Internal Field',
+  create_time: 'Create Time',
+  update_time: 'Update Time',
 
   // Authentication Configuration
   auth_config: 'Authentication Configuration',

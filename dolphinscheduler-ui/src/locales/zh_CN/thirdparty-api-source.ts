@@ -14,6 +14,8 @@ export default {
   field_mapping: '字段映射',
   external_field: '系统字段',
   internal_field: '注册系统字段',
+  create_time: '创建时间',
+  update_time: '更新时间',
 
   // 认证配置
   auth_config: '认证配置',

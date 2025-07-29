@@ -1,4 +1,4 @@
-import { defineComponent, ref, onMounted } from 'vue'
+import { defineComponent, ref, onMounted, computed } from 'vue'
 import {
   NDataTable,
   NButton,
@@ -104,7 +104,7 @@ export default defineComponent({
       }
     }
 
-    const columns = [
+    const columns = computed(() => [
       {
         title: t('thirdparty_api_source.id'),
         key: 'id'
@@ -112,6 +112,16 @@ export default defineComponent({
       {
         title: t('thirdparty_api_source.system_name'),
         key: 'name'
+      },
+      {
+        title: t('thirdparty_api_source.create_time'),
+        key: 'createTime',
+        render: (row: any) => row.createTime ? row.createTime : '-'
+      },
+      {
+        title: t('thirdparty_api_source.update_time'),
+        key: 'updateTime',
+        render: (row: any) => row.updateTime ? row.updateTime : '-'
       },
       {
         title: t('datasource.operation'),
@@ -155,7 +165,7 @@ export default defineComponent({
           )
         }
       }
-    ]
+    ])
 
     onMounted(() => {
       getTableData()
@@ -188,7 +198,7 @@ export default defineComponent({
           <NSpace vertical>
             <NDataTable
               loading={loading.value}
-              columns={columns}
+              columns={columns.value}
               data={tableData.value}
               striped
               size={'small'}
