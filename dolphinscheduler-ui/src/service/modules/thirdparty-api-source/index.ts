@@ -69,7 +69,7 @@ export function getThirdpartyApiSourceById(id: number): Promise<any> {
 }
 
 // 查询已授权第三方系统
-export function authedThirdpartySystem(params: { userId: number }) {
+export function authedThirdpartySystem(params: { userId: number }): any {
   return axios({
     url: '/external-systems/authed-externalSystem',
     method: 'get',
@@ -78,7 +78,7 @@ export function authedThirdpartySystem(params: { userId: number }) {
 }
 
 // 查询未授权第三方系统
-export function unAuthThirdpartySystem(params: { userId: number }) {
+export function unAuthThirdpartySystem(params: { userId: number }): any {
   return axios({
     url: '/external-systems/unauth-externalSystem',
     method: 'get',
@@ -87,7 +87,7 @@ export function unAuthThirdpartySystem(params: { userId: number }) {
 }
 
 // 授权第三方系统
-export function grantThirdpartySystem(data: { userId: number, externalSystemIds: string }) {
+export function grantThirdpartySystem(data: { userId: number, externalSystemIds: string }): any {
   const formData = new URLSearchParams()
   formData.append('userId', String(data.userId))
   formData.append('externalSystemIds', data.externalSystemIds)
