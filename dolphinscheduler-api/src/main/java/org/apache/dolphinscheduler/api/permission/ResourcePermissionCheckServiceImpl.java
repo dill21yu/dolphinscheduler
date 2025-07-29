@@ -25,6 +25,7 @@ import org.apache.dolphinscheduler.dao.entity.AccessToken;
 import org.apache.dolphinscheduler.dao.entity.AlertGroup;
 import org.apache.dolphinscheduler.dao.entity.DataSource;
 import org.apache.dolphinscheduler.dao.entity.Environment;
+import org.apache.dolphinscheduler.dao.entity.ExternalSystem;
 import org.apache.dolphinscheduler.dao.entity.K8sNamespace;
 import org.apache.dolphinscheduler.dao.entity.Project;
 import org.apache.dolphinscheduler.dao.entity.Queue;
@@ -37,6 +38,7 @@ import org.apache.dolphinscheduler.dao.mapper.AlertGroupMapper;
 import org.apache.dolphinscheduler.dao.mapper.AlertPluginInstanceMapper;
 import org.apache.dolphinscheduler.dao.mapper.DataSourceMapper;
 import org.apache.dolphinscheduler.dao.mapper.EnvironmentMapper;
+import org.apache.dolphinscheduler.dao.mapper.ExternalSystemMapper;
 import org.apache.dolphinscheduler.dao.mapper.K8sNamespaceMapper;
 import org.apache.dolphinscheduler.dao.mapper.ProjectMapper;
 import org.apache.dolphinscheduler.dao.mapper.QueueMapper;
@@ -409,6 +411,37 @@ public class ResourcePermissionCheckServiceImpl
         @Override
         public Set<Integer> listAuthorizedResourceIds(int userId, Logger logger) {
             return dataSourceMapper.listAuthorizedDataSource(userId, null).stream().map(DataSource::getId)
+                    .collect(toSet());
+        }
+    }
+
+    /**
+     * External System
+     */
+    @Component
+    public static class ExternalSystemResourcePermissionCheck
+            implements
+                ResourceAcquisitionAndPermissionCheck<Integer> {
+
+        private final ExternalSystemMapper externalSystemMapper;
+
+        public ExternalSystemResourcePermissionCheck(ExternalSystemMapper externalSystemMapper) {
+            this.externalSystemMapper = externalSystemMapper;
+        }
+
+        @Override
+        public List<AuthorizationType> authorizationTypes() {
+            return Collections.singletonList(AuthorizationType.EXTERNALSYSTEM);
+        }
+
+        @Override
+        public boolean permissionCheck(int userId, String url, Logger logger) {
+            return true;
+        }
+
+        @Override
+        public Set<Integer> listAuthorizedResourceIds(int userId, Logger logger) {
+            return externalSystemMapper.listAuthorizedExternalSystem(userId, null).stream().map(ExternalSystem::getId)
                     .collect(toSet());
         }
     }
