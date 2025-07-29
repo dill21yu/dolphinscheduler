@@ -47,3 +47,29 @@ public interface ExternalSystemMapper extends BaseMapper<ExternalSystem> {
                                        @Param("name") String name,
                                        @Param("userId") Integer userId);
 
+    /**
+     * query authed externalSystem
+     * @param userId userId
+     * @return externalSystem list
+     */
+    List<ExternalSystem> queryAuthedExternalSystem(@Param("userId") int userId);
+
+    /**
+     * query externalSystem except userId
+     * @param userId userId
+     * @return externalSystem list
+     */
+    List<ExternalSystem> queryExternalSystemExceptUserId(@Param("userId") int userId);
+
+    /**
+     * list authorized externalSystem
+     *
+     * @param userId userId
+     * @param externalSystemIds data source id array
+     * @param <T> T
+     * @return externalSystem list
+     */
+    <T> List<ExternalSystem> listAuthorizedExternalSystem(@Param("userId") int userId,
+                                                          @Param("externalSystemIds") T[] externalSystemIds);
+
+}

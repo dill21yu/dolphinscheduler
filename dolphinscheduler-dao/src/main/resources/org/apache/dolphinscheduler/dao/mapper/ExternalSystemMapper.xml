@@ -61,4 +61,35 @@
         order by e.update_time desc
     </select>
 
-    <select id="queryAuthe
+    <select id="queryAuthedExternalSystem" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
+        select ds.id, ds.name,  ds.user_id, ds.connection_params, ds.create_time, ds.update_time
+        from t_ds_external_system ds, t_ds_relation_external_system_user rel
+        where ds.id = rel.external_system_id AND rel.user_id = #{userId}
+    </select>
+
+    <select id="queryExternalSystemExceptUserId" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
+        select
+        <include refid="baseSql"/>
+        from t_ds_external_system
+        where user_id <![CDATA[ <> ]]> #{userId}
+    </select>
+
+
+    <select id="listAuthorizedExternalSystem" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
+        select
+        <include refid="baseSql"/>
+        from t_ds_external_system
+        where 1=1
+        <if test="userId != 0">
+            and id in (select external_system_id from t_ds_relation_external_system_user where user_id=#{userId}
+            union select id as external_system_id from t_ds_external_system where user_id=#{userId})
+        </if>
+        <if test="externalSystemIds != null and externalSystemIds.length > 0">
+            and id in
+            <foreach collection="externalSystemIds" item="i" open="(" close=")" separator=",">
+                #{i}
+            </foreach>
+        </if>
+    </select>
+
+</mapper>
