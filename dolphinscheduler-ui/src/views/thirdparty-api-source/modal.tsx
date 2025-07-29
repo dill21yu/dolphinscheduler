@@ -253,23 +253,15 @@ export default defineComponent({
 
     // location 下拉选项与 method 联动
     const getLocationOptions = (method: string) => {
-      if (method === 'GET') {
-        return [
-          { label: t('thirdparty_api_source.header'), value: 'Header' },
-          { label: t('thirdparty_api_source.query'), value: 'Query' }
-        ]
-      } else if (method === 'POST' || method === 'PUT') {
-        return [
-          { label: t('thirdparty_api_source.header'), value: 'Header' },
-          { label: t('thirdparty_api_source.query'), value: 'Query' },
-        ]
-      }
-      return []
+      return [
+        { label: 'Header', value: 'Header' },
+        { label: 'Query', value: 'Query' }
+      ]
     }
 
     return () => (
-      <NModal show={props.show} preset="card" class="dialog-source-modal" style="position: relative; width: 50%; max-width: 700px; max-height: 100vh;" title={form.systemName ? t('thirdparty_api_source.edit_thirdparty_api_source') : t('thirdparty_api_source.create_thirdparty_api_source')} onClose={handleClose}>
-        <div style="max-height: 70vh; overflow-y: auto;">
+      <NModal show={props.show} cancelShow={false} confirmShow={false} closeOnEsc={false} maskClosable={false} preset="card" class={[styles['thirdparty-modal'], 'dialog-source-modal']} title={form.systemName ? t('thirdparty_api_source.edit_thirdparty_api_source') : t('thirdparty_api_source.create_thirdparty_api_source')} onClose={handleClose}>
+        <div class={styles['modal-content']}>
           <NForm labelWidth={120} labelAlign="left" model={form} rules={rules} ref={formRef}>
             <NFormItem label={t('thirdparty_api_source.system_name')} path="systemName" required>
               <NInput v-model={[form.systemName, 'value']} placeholder={t('thirdparty_api_source.system_name_tips')} />
@@ -291,7 +283,7 @@ export default defineComponent({
             </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.auth_type')} path="authConfig.authType" required>
-              <NSelect v-model={[form.authConfig.authType, 'value']} options={authTypeOptions.value} style="width:150px" placeholder={t('thirdparty_api_source.auth_type_tips')} />
+              <NSelect v-model={[form.authConfig.authType, 'value']} options={authTypeOptions.value} class={styles['auth-type-select']} placeholder={t('thirdparty_api_source.auth_type_tips')} />
             </NFormItem>
             {/* BASIC_AUTH */}
             <NFormItem v-show={form.authConfig.authType === 'BASIC_AUTH'} label={t('thirdparty_api_source.username')} path="authConfig.basicUsername" required>
@@ -328,8 +320,8 @@ export default defineComponent({
                 {{
                   default: ({ value }: { value: { key: string; value: string } }) => (
                     <NSpace>
-                      <NInput v-model={[value.key, 'value']} placeholder={t('thirdparty_api_source.key')} style="width:200px" />
-                      <NInput v-model={[value.value, 'value']} placeholder={t('thirdparty_api_source.value')} style="width:200px" />
+                      <NInput v-model={[value.key, 'value']} placeholder={t('thirdparty_api_source.key')} class={styles['key-input']} />
+                      <NInput v-model={[value.value, 'value']} placeholder={t('thirdparty_api_source.value')} class={styles['value-input']} />
                     </NSpace>
                   )
                 }}
@@ -338,16 +330,16 @@ export default defineComponent({
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.input_interface')} path="selectInterface.url" required>
               <NInput v-model={[form.selectInterface.url, 'value']} placeholder={t('thirdparty_api_source.input_interface_tips')} onChange={() => formRef.value?.validate?.()} />
-              <NSelect v-model={[form.selectInterface.method, 'value']} options={methodOptions.value} style="width:150px" />
+              <NSelect v-model={[form.selectInterface.method, 'value']} options={methodOptions.value} class={styles['method-select']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput v-model={[form.selectInterface.parameters, 'value']} onCreate={() => ({ paramName: '', paramValue: null, location: 'Header' })} >
                 {{
                   default: ({ value }: { value: { paramName: string; paramValue: any; location: string } }) => (
                     <NSpace>
-                      <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.selectInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} style="width:120px" />
-                      <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} style="width:150px" />
-                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} style="width:150px" />
+                      <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.selectInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} class={styles['param-location']} />
+                      <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} class={styles['param-name']} />
+                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} class={styles['param-value']} />
                     </NSpace>
                   )
                 }}
@@ -366,17 +358,17 @@ export default defineComponent({
             )}
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.submit_interface')} path="submitInterface.url" required>
-              <NInput v-model={[form.submitInterface.url, 'value']} placeholder={t('thirdparty_api_source.submit_interface_tips')} style="margin-bottom: 8px;" onChange={() => formRef.value?.validate?.()} />
-              <NSelect v-model={[form.submitInterface.method, 'value']} options={methodOptions.value} style="width:150px; margin-bottom: 8px;" />
+              <NInput v-model={[form.submitInterface.url, 'value']} placeholder={t('thirdparty_api_source.submit_interface_tips')} class={styles['submit-url']} onChange={() => formRef.value?.validate?.()} />
+              <NSelect v-model={[form.submitInterface.method, 'value']} options={methodOptions.value} class={styles['submit-method']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput v-model={[form.submitInterface.parameters, 'value']} onCreate={() => ({ paramName: '', paramValue: null, location: 'Header' })} >
                 {{
                   default: ({ value }: { value: { paramName: string; paramValue: any; location: string } }) => (
                     <NSpace>
-                      <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.submitInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} style="width:120px" />
-                      <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} style="width:150px" />
-                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} style="width:150px" />
+                      <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.submitInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} class={styles['param-location']} />
+                      <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} class={styles['param-name']} />
+                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} class={styles['param-value']} />
                     </NSpace>
                   )
                 }}
@@ -396,16 +388,16 @@ export default defineComponent({
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.query_interface')} path="pollStatusInterface.url" required>
               <NInput v-model={[form.pollStatusInterface.url, 'value']} placeholder={t('thirdparty_api_source.query_interface_tips')} onChange={() => formRef.value?.validate?.()} />
-              <NSelect v-model={[form.pollStatusInterface.method, 'value']} options={methodOptions.value} style="width:150px" />
+              <NSelect v-model={[form.pollStatusInterface.method, 'value']} options={methodOptions.value} class={styles['method-select']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput v-model={[form.pollStatusInterface.parameters, 'value']} onCreate={() => ({ paramName: '', paramValue: null, location: '', systemField: '' })} >
                 {{
                   default: ({ value }: { value: { paramName: string; paramValue: any; location: string; systemField: string } }) => (
                     <NSpace>
-                      <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.pollStatusInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} style="width:120px" />
-                      <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} style="width:150px" />
-                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} style="width:150px" />
+                      <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.pollStatusInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} class={styles['param-location']} />
+                      <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} class={styles['param-name']} />
+                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} class={styles['param-value']} />
                     </NSpace>
                   )
                 }}
@@ -423,26 +415,26 @@ export default defineComponent({
               </NFormItem>
             )}
             <NFormItem label={t('thirdparty_api_source.success_condition')}>
-              <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successField, 'value']} placeholder={t('thirdparty_api_source.success_field_tips')} style="width:50%" />
-              <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.success_value_tips')} style="width:50%; margin-left:8px;" />
+              <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successField, 'value']} placeholder={t('thirdparty_api_source.success_field_tips')} class={styles['condition-field']} />
+              <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.success_value_tips')} class={styles['condition-value']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.failure_condition')}>
-              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.successField, 'value']} placeholder={t('thirdparty_api_source.failure_field_tips')} style="width:50%" />
-              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.failure_value_tips')} style="width:50%; margin-left:8px;" />
+              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.successField, 'value']} placeholder={t('thirdparty_api_source.failure_field_tips')} class={styles['condition-field']} />
+              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.failure_value_tips')} class={styles['condition-value']} />
             </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.stop_interface')} path="stopInterface.url" required>
               <NInput v-model={[form.stopInterface.url, 'value']} placeholder={t('thirdparty_api_source.stop_interface_tips')} onChange={() => formRef.value?.validate?.()} />
-              <NSelect v-model={[form.stopInterface.method, 'value']} options={methodOptions.value} style="width:150px" />
+              <NSelect v-model={[form.stopInterface.method, 'value']} options={methodOptions.value} class={styles['method-select']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput v-model={[form.stopInterface.parameters, 'value']} onCreate={() => ({ paramName: '', paramValue: null, location: 'Header' })} >
                 {{
                   default: ({ value }: { value: { paramName: string; paramValue: any; location: string } }) => (
                     <NSpace>
-                      <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.stopInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} style="width:120px" />
-                      <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} style="width:150px" />
-                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} style="width:120px" />
+                      <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.stopInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} class={styles['param-location']} />
+                      <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} class={styles['param-name']} />
+                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} class={styles['param-value-small']} />
                     </NSpace>
                   )
                 }}
@@ -464,8 +456,8 @@ export default defineComponent({
         <div className={styles['modal-footer']}>
           <NSpace justify="end">
             <NButton onClick={handleClose}>{t('thirdparty_api_source.cancel')}</NButton>
+            <NButton type="primary" onClick={handleTest}>{t('thirdparty_api_source.test')}</NButton>
             <NButton type="primary" onClick={handleSubmit}>{t('thirdparty_api_source.submit')}</NButton>
-            <NButton type="success" onClick={handleTest}>{t('thirdparty_api_source.test')}</NButton>
           </NSpace>
         </div>
       </NModal >

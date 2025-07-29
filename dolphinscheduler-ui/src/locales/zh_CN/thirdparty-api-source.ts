@@ -81,8 +81,8 @@ export default {
 
   // 按钮和操作
   cancel: '取消',
-  submit: '提交',
-  test: '测试',
+  submit: '确定',
+  test: '测试连接',
   search: '搜索',
   create: '新建',
   edit: '编辑',
