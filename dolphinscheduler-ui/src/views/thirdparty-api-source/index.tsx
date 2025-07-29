@@ -52,8 +52,7 @@ export default defineComponent({
     }
 
     const handleDelete = async (row: ThirdpartyApiSource) => {
-      const res = await deleteThirdpartyApiSource(row.id!)
-      window.$message.success(t('message.delete.success'))
+      await deleteThirdpartyApiSource(row.id!)
       await getTableData()
     }
 
@@ -95,14 +94,13 @@ export default defineComponent({
     const handleModalTest = async (data: any) => {
       try {
         const res = await testThirdpartyApiSourceConnection(data)
-        if(res) {
-          window.$message.success(t('message.test.success'))
-        } else {
-          window.$message.error(res?.message || t('message.test.failed'))
-        }
+        window.$message.success(
+          res && res.msg
+            ? res.msg
+            : `${t('datasource.test_connect')} ${t('datasource.success')}`
+        )
       } catch (e: any) {
         console.log(e)
-        window.$message.error(t('message.test.failed'))
       }
     }
 
@@ -172,7 +170,7 @@ export default defineComponent({
               size='small'
               onClick={handleCreate}
             >
-              {t('thirdparty_api_source.create')}
+              {t('thirdparty_api_source.create_thirdparty_api_source')}
             </NButton>
             <NSpace>
               <Search

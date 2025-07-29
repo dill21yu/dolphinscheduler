@@ -67,22 +67,3 @@ public interface ExternalSystemService {
 
     List<ExternalSystemTaskQuery> queryExternalSystemTasks(User loginUser, int externalSystemId);
 
-    /**
-     * unauthorized externalSystem
-     *
-     * @param loginUser login user
-     * @param userId    user id
-     * @return unauthed data source result code
-     */
-    List<ExternalSystem> unAuthExternalSystem(User loginUser, Integer userId);
-
-    /**
-     * authorized externalSystem
-     *
-     * @param loginUser login user
-     * @param userId    user id
-     * @return authorized result code
-     */
-    List<ExternalSystem> authedExternalSystem(User loginUser, Integer userId);
-
-}
