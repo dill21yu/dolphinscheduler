@@ -27,13 +27,11 @@ RUN apt update ; \
 
 WORKDIR $DOLPHINSCHEDULER_HOME
 
-COPY ./target/apache-dolphinscheduler-*-bin.tar.gz $DOLPHINSCHEDULER_HOME
-RUN tar -zxvf apache-dolphinscheduler-*-bin.tar.gz ; \
-    rm -rf apache-dolphinscheduler-*-bin.tar.gz ; \
-    mkdir -p ./api-server && mv apache-dolphinscheduler-*-bin/api-server/* ./api-server/ ; \
-    mkdir -p ./ui && mv apache-dolphinscheduler-*-bin/ui/* ./ui/ ; \
-    mkdir -p ./plugins && mv apache-dolphinscheduler-*-bin/plugins/* ./plugins/ ; \
-    rm -rf apache-dolphinscheduler-*-bin
+ADD ./target/apache-dolphinscheduler-*-bin/api-server $DOLPHINSCHEDULER_HOME/api-server
+ADD ./target/apache-dolphinscheduler-*-bin/ui $DOLPHINSCHEDULER_HOME/ui
+ADD ./target/apache-dolphinscheduler-*-bin/plugins/datasource-plugins $DOLPHINSCHEDULER_HOME/plugins/datasource-plugins
+ADD ./target/apache-dolphinscheduler-*-bin/plugins/storage-plugins $DOLPHINSCHEDULER_HOME/plugins/storage-plugins
+ADD ./target/apache-dolphinscheduler-*-bin/plugins/task-plugins $DOLPHINSCHEDULER_HOME/plugins/task-plugins
 
 EXPOSE 12345 25333
 
