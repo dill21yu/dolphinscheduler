@@ -1,27 +1,14 @@
-.modal-footer {
-  position: sticky;
-  bottom: 0;
-  background: #fff;
-  padding: 16px 0 0 0;
-  z-index: 10;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.modal-footer :global(.n-space) {
-  margin-right: 15px;
-}
-
-// 模态框样式
+// 模态框基础样式
 .thirdparty-modal {
   position: relative;
-  width: auto;
-  max-width: 90vw;
-  min-width: 650px;
-  max-height: 90vh;
+  width: 700px;
+  max-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-// 隐藏模态框右上角的关闭按钮
+// 隐藏模态框关闭按钮
 .thirdparty-modal :global(.n-modal__close),
 .thirdparty-modal :global(.n-modal-header__close),
 .thirdparty-modal :global(.n-modal-header .n-button),
@@ -34,116 +21,209 @@
   display: none !important;
 }
 
-// 全局隐藏模态框关闭按钮（备用方案）
-:global(.dialog-source-modal .n-modal__close),
-:global(.dialog-source-modal .n-modal-header__close),
-:global(.dialog-source-modal .n-modal-header .n-button),
-:global(.dialog-source-modal .n-modal-header .n-icon),
-:global(.dialog-source-modal .n-modal-header .n-base-icon),
-:global(.dialog-source-modal .n-modal-header .n-button--icon-only),
-:global(.dialog-source-modal .n-base-close),
-:global(.dialog-source-modal .n-base-close--absolute),
-:global(.dialog-source-modal .n-card-header__close) {
-  display: none !important;
-}
-
-// 直接针对关闭按钮的类名
-:global(.n-base-close),
-:global(.n-base-close--absolute),
-:global(.n-card-header__close) {
-  display: none !important;
-}
-
 // 模态框内容区域
 .modal-content {
-  max-height: 70vh;
+  flex: 1;
+  max-height: calc(90vh - 120px);
   overflow-y: auto;
   overflow-x: hidden;
   width: 100%;
+  padding: 0 16px;
+  box-sizing: border-box;
 }
 
-// 表单内容区域
+// 表单基础样式
 .modal-content :global(.n-form) {
   width: 100%;
-  max-width: 100%;
+  box-sizing: border-box;
 }
 
-// 表单项样式
 .modal-content :global(.n-form-item) {
   width: 100%;
+  margin-bottom: 16px;
+  box-sizing: border-box;
 }
 
-// 输入框和选择器容器
 .modal-content :global(.n-form-item__content) {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   flex-wrap: wrap;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-// 动态输入组件
-.modal-content :global(.n-dynamic-input) {
-  width: 100%;
+.modal-content :global(.n-form-item__label) {
+  min-width: 120px;
+  text-align: right;
+  padding-right: 12px;
+  box-sizing: border-box;
+}
+
+// 输入框和选择器基础样式
+.modal-content :global(.n-input),
+.modal-content :global(.n-select) {
+  box-sizing: border-box;
 }
 
 // 空间组件
 .modal-content :global(.n-space) {
   flex-wrap: wrap;
   gap: 8px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+// 动态输入组件
+.modal-content :global(.n-dynamic-input) {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.modal-content :global(.n-dynamic-input .n-dynamic-input-item) {
+  width: 100%;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  box-sizing: border-box;
+}
+
+.modal-content :global(.n-dynamic-input .n-dynamic-input-item .n-space) {
+  width: 100%;
+  justify-content: flex-start;
+  flex: 1;
+  box-sizing: border-box;
+}
+
+.modal-content :global(.n-dynamic-input .n-dynamic-input-item .n-button) {
+  margin-left: 8px;
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+.modal-content :global(.n-dynamic-input .n-dynamic-input-item .n-input) {
+  flex: 1;
+  min-width: 0;
+  box-sizing: border-box;
+}
+
+.modal-content :global(.n-dynamic-input .n-dynamic-input-item .n-select) {
+  flex-shrink: 0;
+  box-sizing: border-box;
+}
+
+// 字段映射特殊样式
+.modal-content :global(.n-dynamic-input .n-dynamic-input-item .n-space .n-input) {
+  flex: 1;
+  width: 50%;
+  min-width: 200px;
+  box-sizing: border-box;
 }
 
 // 参数输入框样式
 .param-location {
   width: 100px;
+  min-width: 100px;
 }
 
 .param-name {
-  width: 120px;
+  width: 150px;
+  min-width: 150px;
 }
 
 .param-value {
-  width: 140px;
+  width: 180px;
+  min-width: 180px;
 }
 
-.param-value-small {
-  width: 100px;
-}
 
-// 方法选择器样式
-.method-select {
-  width: 120px;
-}
 
-// 认证类型选择器样式
+// 选择器样式
+.method-select,
 .auth-type-select {
   width: 120px;
+  min-width: 120px;
 }
 
-// 成功/失败条件输入框样式
+// 条件输入框样式
 .condition-field {
-  width: 50%;
+  width: calc(50% - 4px);
+  min-width: 200px;
 }
 
 .condition-value {
-  width: 50%;
+  width: calc(50% - 4px);
+  min-width: 200px;
   margin-left: 8px;
 }
 
-// 提交接口URL输入框样式
+// 提交接口样式
 .submit-url {
-  margin-bottom: 8px;
+  flex: 1;
+  min-width: 300px;
 }
 
 .submit-method {
   width: 120px;
-  margin-bottom: 8px;
+  min-width: 120px;
 }
 
 // 键值对输入框样式
-.key-input {
-  width: 150px;
+.key-input,
+.value-input {
+  width: 200px;
+  min-width: 150px;
 }
 
-.value-input {
-  width: 150px;
+// Monaco编辑器样式
+.modal-content :global(.monaco-editor) {
+  height: 200px !important;
+  min-height: 200px !important;
+}
+
+.modal-content :global(.monaco-editor .monaco-editor-background) {
+  background-color: #fafafa !important;
+}
+
+// 分割线样式
+.modal-content :global(.n-divider) {
+  margin: 20px 0;
+  border-color: #f0f0f0;
+}
+
+// 底部按钮区域
+.modal-footer {
+  position: sticky;
+  bottom: 0;
+  background: #fff;
+  padding-top: 16px;
+  z-index: 10;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #f0f0f0;
+  margin-top: 16px;
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.modal-footer :global(.n-space) {
+  margin-right: 15px;
+  gap: 8px;
+}
+
+.modal-footer :global(.n-button) {
+  min-width: 80px;
+  height: 32px;
+  padding: 0 14px;
+}
+
+// 响应式设计
+@media screen and (min-width: 1920px) {
+  .thirdparty-modal {
+    width: 700px;
+  }
+
+  .modal-content {
+    max-height: calc(90vh - 120px);
+  }
 }
