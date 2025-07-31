@@ -21,6 +21,16 @@ public class ExternalSystemResourceParameters extends AbstractResourceParameters
 
     private String connectionParams;
 
+    private String authenticationToken;
+
+    public String getAuthenticationToken() {
+        return authenticationToken;
+    }
+
+    public void setAuthenticationToken(String authenticationToken) {
+        this.authenticationToken = authenticationToken;
+    }
+
     public String getConnectionParams() {
         return connectionParams;
     }

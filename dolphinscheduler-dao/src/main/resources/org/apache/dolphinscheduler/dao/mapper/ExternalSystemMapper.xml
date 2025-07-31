@@ -22,6 +22,9 @@
     <sql id="baseSql">
         id, name, connection_params, user_id, create_time, update_time
     </sql>
+    <sql id="baseSqlWithoutConnectionParams">
+        id, name, user_id, create_time, update_time
+    </sql>
 
     <select id="queryBySystemName" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
         select <include refid="baseSql"/>
@@ -29,7 +32,7 @@
         where name=#{name}
     </select>
 
-    <select id="selectList" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
+    <select id="selectListByUserId" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
         select <include refid="baseSql"/>
         from t_ds_external_system
         <if test="userId != 0">
@@ -62,16 +65,23 @@
     </select>
 
     <select id="queryAuthedExternalSystem" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
-        select ds.id, ds.name,  ds.user_id, ds.connection_params, ds.create_time, ds.update_time
+        select ds.id, ds.name,  ds.user_id, ds.create_time, ds.update_time
         from t_ds_external_system ds, t_ds_relation_external_system_user rel
         where ds.id = rel.external_system_id AND rel.user_id = #{userId}
     </select>
 
     <select id="queryExternalSystemExceptUserId" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
         select
-        <include refid="baseSql"/>
+        <include refid="baseSqlWithoutConnectionParams"/>
         from t_ds_external_system
         where user_id <![CDATA[ <> ]]> #{userId}
+    </select>
+
+    <select id="queryUserOwnExternalSystem" resultType="org.apache.dolphinscheduler.dao.entity.ExternalSystem">
+        select
+        <include refid="baseSqlWithoutConnectionParams"/>
+        from t_ds_external_system
+        where user_id = #{userId}
     </select>
 
 

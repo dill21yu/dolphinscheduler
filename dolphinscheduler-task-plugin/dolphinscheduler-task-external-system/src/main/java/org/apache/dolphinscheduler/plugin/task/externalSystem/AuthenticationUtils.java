@@ -17,6 +17,10 @@
 
 package org.apache.dolphinscheduler.plugin.task.externalSystem;
 
+import static org.apache.dolphinscheduler.plugin.task.externalSystem.BaseExternalSystemParams.AuthType.BASIC_AUTH;
+import static org.apache.dolphinscheduler.plugin.task.externalSystem.BaseExternalSystemParams.AuthType.JWT;
+import static org.apache.dolphinscheduler.plugin.task.externalSystem.BaseExternalSystemParams.AuthType.OAUTH2;
+
 import org.apache.dolphinscheduler.common.model.OkHttpRequestHeaderContentType;
 import org.apache.dolphinscheduler.common.model.OkHttpRequestHeaders;
 import org.apache.dolphinscheduler.common.model.OkHttpResponse;
@@ -38,11 +42,12 @@ public class AuthenticationUtils {
     /**
      * 认证并获取Token
      *
-     * @param authConfig 认证配置
+     * @param baseExternalSystemParams 认证配置
      * @return 认证后的Token
      * @throws Exception
      */
-    public static String authenticateAndGetToken(BaseExternalSystemParams.AuthConfig authConfig) throws Exception {
+    public static String authenticateAndGetToken(BaseExternalSystemParams baseExternalSystemParams) throws Exception {
+        BaseExternalSystemParams.AuthConfig authConfig = baseExternalSystemParams.getAuthConfig();
         if (authConfig == null) {
             throw new RuntimeException("AuthConfig is not provided");
         }
@@ -52,13 +57,13 @@ public class AuthenticationUtils {
                 // 基础认证
                 String auth = authConfig.getBasicUsername() + ":" + authConfig.getBasicPassword();
                 String encoding = java.util.Base64.getEncoder().encodeToString(auth.getBytes());
-                return "Basic " + encoding;
+                return encoding;
             case JWT:
                 // JWT认证
-                return "Bearer " + authConfig.getJwtToken();
+                return authConfig.getJwtToken();
             case OAUTH2:
                 // OAuth2认证
-                return "Bearer " + getOAuth2Token(authConfig);
+                return getOAuth2Token(baseExternalSystemParams);
             default:
                 throw new RuntimeException("Unsupported auth type: " + authConfig.getAuthType());
         }
@@ -67,26 +72,35 @@ public class AuthenticationUtils {
     /**
      * 获取OAuth2 Token
      *
-     * @param authConfig 认证配置
+     * @param baseExternalSystemParams 认证配置
      * @return OAuth2 Token
      * @throws Exception
      */
-    private static String getOAuth2Token(BaseExternalSystemParams.AuthConfig authConfig) throws Exception {
+    private static String getOAuth2Token(BaseExternalSystemParams baseExternalSystemParams) throws Exception {
+        BaseExternalSystemParams.AuthConfig authConfig = baseExternalSystemParams.getAuthConfig();
         try {
             OkHttpRequestHeaders headers = new OkHttpRequestHeaders();
             headers.setHeaders(new HashMap<>());
             headers.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_FORM_URLENCODED);
 
-            RequestBody formBody = new FormBody.Builder()
+            FormBody.Builder formBodyBuilder = new FormBody.Builder()
                     .add("client_id", authConfig.getOauth2ClientId())
                     .add("client_secret", authConfig.getOauth2ClientSecret())
                     .add("username", authConfig.getOauth2Username())
                     .add("password", authConfig.getOauth2Password())
-                    .add("grant_type", authConfig.getOauth2GrantType())
-                    .build();
+                    .add("grant_type", authConfig.getOauth2GrantType());
+
+            // 添加 authMappings 中的参数
+            if (authConfig.getAuthMappings() != null) {
+                for (BaseExternalSystemParams.AuthMapping authMapping : authConfig.getAuthMappings()) {
+                    formBodyBuilder.add(authMapping.getKey(), authMapping.getValue());
+                }
+            }
+
+            RequestBody formBody = formBodyBuilder.build();
 
             OkHttpResponse response = OkHttpUtils.postFormBody(
-                    authConfig.getOauth2TokenUrl(),
+                    baseExternalSystemParams.getCompleteUrl(authConfig.getOauth2TokenUrl()),
                     headers,
                     null,
                     formBody,
@@ -109,4 +123,5 @@ public class AuthenticationUtils {
             throw new TaskException("Authentication failed", e);
         }
     }
+
 }
