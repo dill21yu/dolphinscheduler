@@ -32,6 +32,7 @@ export default defineComponent({
     const itemCount = ref(0)
     const showModal = ref(false)
     const editData = ref<any>(null)
+    const operationType = ref<'create' | 'edit'>('create')
 
     // 获取真实接口数据
     const getTableData = async () => {
@@ -68,17 +69,20 @@ export default defineComponent({
 
     const handleCreate = () => {
       editData.value = null
+      operationType.value = 'create'
       showModal.value = true
     }
     const handleEdit = async (row: any) => {
       // 获取详情
       const detail = await getThirdpartyApiSourceById(row.id)
       editData.value = detail
+      operationType.value = 'edit'
       showModal.value = true
     }
     const handleModalClose = () => {
       showModal.value = false
       editData.value = null
+      operationType.value = 'create'
     }
     const handleModalSubmit = async (data: any) => {
       const res = data.id ? await updateThirdpartyApiSource(data.id, data) : await createThirdpartyApiSource(data)
@@ -220,6 +224,7 @@ export default defineComponent({
         <ThirdpartyApiSourceModal
           show={showModal.value}
           data={editData.value}
+          operationType={operationType.value}
           onClose={handleModalClose}
           onSubmit={handleModalSubmit}
           onTest={handleModalTest}

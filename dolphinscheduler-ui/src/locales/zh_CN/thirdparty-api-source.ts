@@ -87,6 +87,7 @@ export default {
   test: '测试连接',
   search: '搜索',
   create: '新建',
+  update: '更新',
   edit: '编辑',
   delete: '删除',
 

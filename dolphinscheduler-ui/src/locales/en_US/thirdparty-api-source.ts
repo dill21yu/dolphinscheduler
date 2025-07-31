@@ -89,6 +89,7 @@ export default {
   create: 'Create',
   edit: 'Edit',
   delete: 'Delete',
+  update: 'Update',
 
   // Message Tips
   create_success: 'Create successful',

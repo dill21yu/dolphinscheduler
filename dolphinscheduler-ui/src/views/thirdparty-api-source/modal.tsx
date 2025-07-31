@@ -19,7 +19,11 @@ export default defineComponent({
   name: 'ThirdpartyApiSourceModal',
   props: {
     show: Boolean,
-    data: Object as PropType<any>
+    data: Object as PropType<any>,
+    operationType: {
+      type: String as PropType<'create' | 'edit'>,
+      default: 'create'
+    }
   },
   emits: ['close', 'submit', 'test'],
   setup(props, { emit }) {
@@ -198,6 +202,9 @@ export default defineComponent({
     // 新增：表单ref
     const formRef = ref<FormInst | null>(null)
 
+    // 根据操作类型判断是否为编辑模式
+    const isEditMode = computed(() => props.operationType === 'edit')
+
     const systemFieldOptions = computed(() => {
       return form.fieldMappings
         .filter(item => item.externalField)
@@ -205,7 +212,7 @@ export default defineComponent({
     })
 
     watch(() => props.data, (val) => {
-      if (val) {
+      if (val && isEditMode.value) {
         Object.assign(form, JSON.parse(JSON.stringify(val)))
       } else {
         Object.assign(form, {
@@ -268,7 +275,7 @@ export default defineComponent({
     }
 
     return () => (
-      <NModal show={props.show} cancelShow={false} confirmShow={false} closeOnEsc={false} maskClosable={false} preset="card" class={[styles['thirdparty-modal'], 'dialog-source-modal']} title={form.systemName ? t('thirdparty_api_source.edit_thirdparty_api_source') : t('thirdparty_api_source.create_thirdparty_api_source')} onClose={handleClose}>
+      <NModal show={props.show} cancelShow={false} confirmShow={false} closeOnEsc={false} maskClosable={false} preset="card" class={[styles['thirdparty-modal'], 'dialog-source-modal']} title={isEditMode.value ? t('thirdparty_api_source.edit_thirdparty_api_source') : t('thirdparty_api_source.create_thirdparty_api_source')} onClose={handleClose}>
         <div class={styles['modal-content']}>
           <NForm labelWidth={120} labelAlign="left" model={form} rules={rules} ref={formRef}>
             <NFormItem label={t('thirdparty_api_source.system_name')} path="systemName" required>
@@ -465,7 +472,7 @@ export default defineComponent({
           <NSpace justify="end">
             <NButton onClick={handleClose}>{t('thirdparty_api_source.cancel')}</NButton>
             <NButton type="primary" onClick={handleTest}>{t('thirdparty_api_source.test')}</NButton>
-            <NButton type="primary" onClick={handleSubmit}>{t('thirdparty_api_source.submit')}</NButton>
+            <NButton type="primary" onClick={handleSubmit}>{isEditMode.value ? t('thirdparty_api_source.update') : t('thirdparty_api_source.create')}</NButton>
           </NSpace>
         </div>
       </NModal >
