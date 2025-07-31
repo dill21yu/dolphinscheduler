@@ -33,7 +33,7 @@ public class ExternalSystemParameters extends AbstractParameters {
      */
     private int externalSystemId;
 
-    private String connParams;
+    private String authenticationToken;
 
     private String externalTaskId;
 
@@ -50,14 +50,20 @@ public class ExternalSystemParameters extends AbstractParameters {
     }
 
     public BaseExternalSystemParams generateExtendedContext(ResourceParametersHelper parametersHelper) {
-        BaseExternalSystemParams BaseExternalSystemParams = new BaseExternalSystemParams();
-        parametersHelper.getResourceParameters(ResourceType.EXTERNAL_SYSTEM, externalSystemId);
         ExternalSystemResourceParameters externalSystemResourceParameters =
                 (ExternalSystemResourceParameters) parametersHelper.getResourceParameters(ResourceType.EXTERNAL_SYSTEM,
                         externalSystemId);
-        BaseExternalSystemParams = JSONUtils.parseObject(externalSystemResourceParameters.getConnectionParams(),
-                BaseExternalSystemParams.class);
-        return BaseExternalSystemParams;
+        BaseExternalSystemParams baseExternalSystemParams =
+                JSONUtils.parseObject(externalSystemResourceParameters.getConnectionParams(),
+                        BaseExternalSystemParams.class);
+        return baseExternalSystemParams;
+    }
+
+    public String getToken(ResourceParametersHelper parametersHelper) {
+        ExternalSystemResourceParameters externalSystemResourceParameters =
+                (ExternalSystemResourceParameters) parametersHelper.getResourceParameters(ResourceType.EXTERNAL_SYSTEM,
+                        externalSystemId);
+        return externalSystemResourceParameters.getAuthenticationToken();
     }
 
 }

@@ -41,6 +41,7 @@ import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.DataSourc
 import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.ExternalSystemResourceParameters;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.ResourceParametersHelper;
 import org.apache.dolphinscheduler.plugin.task.api.utils.MapUtils;
+import org.apache.dolphinscheduler.server.master.cluster.ExternalSystemTokenManager;
 import org.apache.dolphinscheduler.server.master.config.MasterConfig;
 import org.apache.dolphinscheduler.server.master.engine.task.runnable.TaskExecutionContextBuilder;
 import org.apache.dolphinscheduler.server.master.engine.task.runnable.TaskExecutionContextCreateRequest;
@@ -73,6 +74,9 @@ public class TaskExecutionContextFactory {
 
     @Autowired
     private IEnvironmentDao environmentDao;
+
+    @Autowired
+    private ExternalSystemTokenManager externalSystemTokenManager;
 
     public TaskExecutionContext createTaskExecutionContext(TaskExecutionContextCreateRequest request) {
         final TaskInstance taskInstance = request.getTaskInstance();
@@ -144,6 +148,8 @@ public class TaskExecutionContextFactory {
             }
             ExternalSystemResourceParameters externalSystemResourceParameters = new ExternalSystemResourceParameters();
             externalSystemResourceParameters.setConnectionParams(externalSystem.getConnectionParams());
+            externalSystemResourceParameters
+                    .setAuthenticationToken(externalSystemTokenManager.getLatestTokenForTaskDispatch(externalSystem));
             map.put(code, externalSystemResourceParameters);
         });
     }

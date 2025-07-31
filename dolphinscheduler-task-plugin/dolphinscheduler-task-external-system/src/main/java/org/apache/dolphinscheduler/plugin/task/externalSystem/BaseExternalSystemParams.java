@@ -20,8 +20,10 @@ package org.apache.dolphinscheduler.plugin.task.externalSystem;
 import java.util.List;
 
 import lombok.Data;
+import lombok.extern.slf4j.Slf4j;
 
 @Data
+@Slf4j
 public class BaseExternalSystemParams {
 
     private Integer id; // 系统id
@@ -43,7 +45,6 @@ public class BaseExternalSystemParams {
 
         private String externalField; // 外部系统字段名
         private String internalField; // 注册系统字段名
-        // private FieldType fieldType; // 字段类型（枚举）
     }
 
     @Data
@@ -133,4 +134,28 @@ public class BaseExternalSystemParams {
         private String key;
         private String value;
     }
+    public String getTokenPrefix(AuthType authType) {
+        switch (authType) {
+            case BASIC_AUTH:
+                return "Basic ";
+            case JWT:
+                return "Bearer ";
+            case OAUTH2:
+                return "Bearer ";
+            default:
+                log.warn("Unsupported auth type: " + authType);
+                return "";
+        }
+    }
+    public String getCompleteUrl(String url) {
+        if (url == null || !url.startsWith("http")) {
+            if (serviceAddress == null) {
+                log.warn("Service address is not set.");
+                return url; // 或者抛出异常，根据业务需求决定
+            }
+            return serviceAddress + url;
+        }
+        return url;
+    }
+
 }

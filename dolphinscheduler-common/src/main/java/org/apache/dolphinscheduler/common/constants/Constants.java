@@ -186,6 +186,7 @@ public final class Constants {
     public static final int DEFAULT_ADMIN_PERMISSION = 7;
 
     /**
+    /**
      * default hash map size
      */
     public static final int DEFAULT_HASH_MAP_SIZE = 16;
@@ -207,8 +208,10 @@ public final class Constants {
 
     public static final String DEFAULT = "default";
     public static final String PASSWORD = "password";
-    public static final String JWTSECRETORPUBLICKEY = "jwtSecretOrPublicKey";
-    public static final String SECRET = "secret";
+    public static final String BASICPASSWORD = "basicPassword";
+    public static final String OAUTH2CLIENTSECRET = "oauth2ClientSecret";
+    public static final String JWTTOKEN = "jwtToken";
+    public static final String OAUTH2PASSWORD = "oauth2Password";
 
     public static final String XXXXXX = "******";
     public static final String NULL = "NULL";

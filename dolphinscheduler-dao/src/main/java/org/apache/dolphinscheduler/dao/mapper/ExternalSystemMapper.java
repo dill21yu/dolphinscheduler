@@ -38,7 +38,7 @@ public interface ExternalSystemMapper extends BaseMapper<ExternalSystem> {
     /**
      * 根据用户ID查询有权限的外部系统列表
      */
-    List<ExternalSystem> selectList(@Param("userId") Integer userId);
+    List<ExternalSystem> selectListByUserId(@Param("userId") Integer userId);
 
     /**
      * 分页查询外部系统列表
@@ -53,6 +53,8 @@ public interface ExternalSystemMapper extends BaseMapper<ExternalSystem> {
      * @return externalSystem list
      */
     List<ExternalSystem> queryAuthedExternalSystem(@Param("userId") int userId);
+
+    List<ExternalSystem> queryUserOwnExternalSystem(@Param("userId") int userId);
 
     /**
      * query externalSystem except userId

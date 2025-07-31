@@ -29,7 +29,6 @@ import org.apache.dolphinscheduler.plugin.task.api.TaskException;
 import org.apache.dolphinscheduler.plugin.task.api.TaskExecutionContext;
 import org.apache.dolphinscheduler.plugin.task.api.model.Property;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.AbstractParameters;
-import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -46,8 +45,7 @@ import com.jayway.jsonpath.JsonPath;
 @Slf4j
 public class ExternalSystemTask extends AbstractTask {
 
-    // private final HashSet<String> waitingStateSet = Sets.newHashSet("RUNNING");
-    private static final String EXTERNAL_TASK_ID = "externalTaskId";
+    private static final String EXTERNAL_TASK_ID = "externalTaskId";// todo
     private static final String INTERNAL_TASK_INSTANCE_ID = "taskInstanceId";
     private Boolean traceEnabled = true;
 
@@ -60,11 +58,6 @@ public class ExternalSystemTask extends AbstractTask {
     private Set<String> successStatusCache = new HashSet<>();
     private Set<String> failureStatusCache = new HashSet<>();
 
-    /**
-     * 构造函数：初始化任务执行上下文。
-     *
-     * @param taskExecutionContext 任务执行上下文
-     */
     public ExternalSystemTask(TaskExecutionContext taskExecutionContext) {
         super(taskExecutionContext);
         this.taskExecutionContext = taskExecutionContext;
@@ -72,6 +65,8 @@ public class ExternalSystemTask extends AbstractTask {
                 JSONUtils.parseObject(taskExecutionContext.getTaskParams(), ExternalSystemParameters.class);
         baseExternalSystemParams =
                 externalSystemParameters.generateExtendedContext(taskExecutionContext.getResourceParametersHelper());
+        accessToken = baseExternalSystemParams.getTokenPrefix(baseExternalSystemParams.getAuthConfig().getAuthType())
+                + externalSystemParameters.getToken(taskExecutionContext.getResourceParametersHelper());
     }
 
     @Override
@@ -89,24 +84,14 @@ public class ExternalSystemTask extends AbstractTask {
         // 初始化参数映射
         initParameterMap();
         initStatusCache();
-
     }
 
     @Override
     public void handle(TaskCallBack taskCallBack) throws TaskException {
         try {
-
-            // BaseExternalSystemParams = (BaseExternalSystemParams) DataSourceUtils.buildConnectionParams(dbType,
-            // sqlTaskExecutionContext.getConnectionParams());
-            // 1. 认证获取token
-            accessToken = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParams.getAuthConfig());
-
-            // 2. 提交任务
             submitExternalTask();
             TimeUnit.SECONDS.sleep(10);
-            // 3. 跟踪任务状态
             trackExternalTaskStatus();
-
         } catch (Exception e) {
             log.error("external system task error", e);
             setExitStatusCode(TaskConstants.EXIT_CODE_FAILURE);
@@ -125,76 +110,30 @@ public class ExternalSystemTask extends AbstractTask {
         }
     }
 
-    /**
-     * 提交任务到外部系统
-     */
     private void submitExternalTask() throws TaskException {
         try {
             BaseExternalSystemParams.InterfaceConfig submitConfig = baseExternalSystemParams.getSubmitInterface();
+            String url = replaceParameterPlaceholders(baseExternalSystemParams.getCompleteUrl(submitConfig.getUrl()));
+            Map<String, String> headers = buildHeaders(submitConfig);
+            buildAuthHeader(accessToken, headers);
+            Map<String, Object> requestBody = buildRequestBody(submitConfig);
+            Map<String, Object> requestParams = buildRequestParams(submitConfig);
 
-            // 替换参数占位符
-            String url = replaceParameterPlaceholders(submitConfig.getUrl());
-
-            OkHttpRequestHeaders headers = new OkHttpRequestHeaders();
-            headers.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_JSON);
-
-            Map<String, String> headeMap = new HashMap<>();
-            Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> requestParams = new HashMap<>();
-            headeMap.put("Authorization", this.accessToken);
-
-            // 处理参数
-            for (BaseExternalSystemParams.RequestParameter param : submitConfig.getParameters()) {
-                String value = replaceParameterPlaceholders(param.getParamValue());
-                ParameterUtils.convertParameterPlaceholders(value, parameterMap);// todo 可以替换内置参数
-                switch (param.getLocation().name()) {
-                    case "HEADER":
-                        headeMap.put(param.getParamName(), value);
-                        break;
-                    case "BODY":
-                        requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(submitConfig.getHttpBody()),
-                                Map.class);
-                        break;
-                    case "PARAM":
-                        requestParams.put(param.getParamName(), value);
-                        break;
-                }
-            }
-            if (!headeMap.isEmpty()) {
-                headers.setHeaders(headeMap);
-            }
-            // headers.setOkHttpRequestHeaderContentType("application/json");
-
-            OkHttpResponse response;
-            if (BaseExternalSystemParams.HttpMethod.POST.equals(submitConfig.getMethod())) {
-                response = OkHttpUtils.post(url, headers, requestParams, requestBody, 120000, 120000, 120000);
-            } else if (BaseExternalSystemParams.HttpMethod.PUT.equals(submitConfig.getMethod())) {
-                response = OkHttpUtils.put(url, headers, requestBody, 120000, 120000, 120000);
-            } else {
-                response = OkHttpUtils.get(url, headers, requestParams, 120000, 120000, 120000);
-            }
+            OkHttpResponse response = executeRequest(submitConfig.getMethod(), url, headers, requestParams, requestBody,
+                    120000, 120000, 120000);
 
             if (response.getStatusCode() != 200) {
                 throw new TaskException("Submit task failed: " + response.getBody());
             }
 
-            // 解析响应获取taskInstanceId
             parseSubmitResponse(response.getBody());
-
             log.info("Task submitted successfully, external task instance id: {}", externalTaskInstanceId);
-
         } catch (Exception e) {
             log.error("Submit task failed", e);
             throw new TaskException("Submit task failed", e);
         }
     }
 
-    /**
-     * 跟踪任务状态
-     */
-    /**
-     * 跟踪任务状态
-     */
     private void trackExternalTaskStatus() throws TaskException {
         try {
             String status;
@@ -211,11 +150,8 @@ public class ExternalSystemTask extends AbstractTask {
                     return;
                 }
 
-                // 等待10秒后再次检查
                 TimeUnit.SECONDS.sleep(10);
-
-            } while (traceEnabled); // 无限循环，直到成功或失败
-
+            } while (traceEnabled);
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
             throw new TaskException("Task status tracking interrupted", e);
@@ -226,63 +162,28 @@ public class ExternalSystemTask extends AbstractTask {
         }
     }
 
-    /**
-     * 轮询任务状态
-     */
-    public String pollTaskStatus() throws TaskException {
+    private String pollTaskStatus() throws TaskException {
         try {
             BaseExternalSystemParams.PollingInterfaceConfig pollConfig =
                     baseExternalSystemParams.getPollStatusInterface();
+            String url = replaceParameterPlaceholders(baseExternalSystemParams.getCompleteUrl(pollConfig.getUrl()));
+            Map<String, String> headers = buildHeaders(pollConfig);
+            buildAuthHeader(accessToken, headers);
+            Map<String, Object> requestBody = buildRequestBody(pollConfig);
+            Map<String, Object> requestParams = buildRequestParams(pollConfig);
 
-            String url = replaceParameterPlaceholders(pollConfig.getUrl());
-
-            OkHttpRequestHeaders headers = new OkHttpRequestHeaders();
-            Map<String, String> headeMap = new HashMap<>();
-            Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> requestParams = new HashMap<>();
-            headers.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_JSON);
-            headeMap.put("Authorization", this.accessToken);
-            // 处理参数
-            for (BaseExternalSystemParams.RequestParameter param : pollConfig.getParameters()) {
-                String value = replaceParameterPlaceholders(param.getParamValue());
-
-                switch (param.getLocation().name()) {
-                    case "HEADER":
-                        headeMap.put(param.getParamName(), value);
-                        break;
-                    case "BODY":
-                        requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(pollConfig.getHttpBody()),
-                                Map.class);
-                        break;
-                    case "PARAM":
-                        requestParams.put(param.getParamName(), value);
-                        break;
-                }
-            }
-            if (!headeMap.isEmpty()) {
-                headers.setHeaders(headeMap);
-            }
-
-            OkHttpResponse response;
-            if (BaseExternalSystemParams.HttpMethod.POST.equals(pollConfig.getMethod())) {
-                response = OkHttpUtils.post(url, headers, requestParams, requestBody, 30000, 30000, 30000);
-            } else if (BaseExternalSystemParams.HttpMethod.PUT.equals(pollConfig.getMethod())) {
-                response = OkHttpUtils.put(url, headers, requestBody, 30000, 30000, 30000);
-            } else {
-                response = OkHttpUtils.get(url, headers, requestParams, 30000, 30000, 30000);
-            }
+            OkHttpResponse response = executeRequest(pollConfig.getMethod(), url, headers, requestParams, requestBody,
+                    30000, 30000, 30000);
 
             if (response.getStatusCode() != 200) {
                 throw new TaskException("polling task failed: " + response.getBody());
             }
 
-            // 使用JsonPath解析状态
-            String statusPath = pollConfig.getPollingSuccessConfig().getSuccessField();// todo 有单个path
+            String statusPath = pollConfig.getPollingSuccessConfig().getSuccessField();
             Object statusObj = JsonPath.read(response.getBody(), statusPath);
             log.info("PollTaskStatus successfully, external task instance status: {}", statusObj.toString());
 
             return statusObj.toString().replace("\"", "");
-
         } catch (Exception e) {
             log.error("Poll task status failed", e);
             throw new TaskException("Poll task status failed", e);
@@ -294,66 +195,97 @@ public class ExternalSystemTask extends AbstractTask {
             traceEnabled = false;
             BaseExternalSystemParams.InterfaceConfig stopConfig = baseExternalSystemParams.getStopInterface();
             log.info("start cancel External System TaskInstance");
-            String url = replaceParameterPlaceholders(stopConfig.getUrl());
+            String url = replaceParameterPlaceholders(baseExternalSystemParams.getCompleteUrl(stopConfig.getUrl()));
+            Map<String, String> headers = buildHeaders(stopConfig);
+            buildAuthHeader(accessToken, headers);
+            Map<String, Object> requestBody = buildRequestBody(stopConfig);
+            Map<String, Object> requestParams = buildRequestParams(stopConfig);
 
-            OkHttpRequestHeaders headers = new OkHttpRequestHeaders();
-            Map<String, String> headeMap = new HashMap<>();
-            Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> requestParams = new HashMap<>();
-            headers.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_JSON);
-            headeMap.put("Authorization", this.accessToken);
-
-            // 处理参数
-            for (BaseExternalSystemParams.RequestParameter param : stopConfig.getParameters()) {
-                String value = replaceParameterPlaceholders(param.getParamValue());
-
-                switch (param.getLocation().name()) {
-                    case "HEADER":
-                        headeMap.put(param.getParamName(), value);
-                        break;
-                    case "BODY":
-                        requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(stopConfig.getHttpBody()),
-                                Map.class);
-                        break;
-                    case "PARAM":
-                        requestParams.put(param.getParamName(), value);
-                        break;
-                }
-            }
-            if (!headeMap.isEmpty()) {
-                headers.setHeaders(headeMap);
-            }
-
-            OkHttpResponse response;
-            switch (stopConfig.getMethod()) {
-                case POST:
-                    response = OkHttpUtils.post(url, headers, requestParams, requestBody, 30000, 30000, 30000);
-                    break;
-                case PUT:
-                    response = OkHttpUtils.put(url, headers, requestBody, 30000, 30000, 30000);
-                    break;
-                case GET:
-                    response = OkHttpUtils.get(url, headers, requestParams, 30000, 30000, 30000);
-                    break;
-                default:
-                    throw new TaskException("Unsupported HTTP method: " + stopConfig.getMethod());
-            }
+            OkHttpResponse response = executeRequest(stopConfig.getMethod(), url, headers, requestParams, requestBody,
+                    30000, 30000, 30000);
 
             if (response.getStatusCode() != 200) {
                 throw new TaskException("polling task failed: " + response.getBody());
             }
             log.info("Cancel task result: {}", response.getBody());
-
         } catch (Exception e) {
             log.error("Cancel task failed", e);
             throw new TaskException("Cancel task failed", e);
         }
     }
 
-    /**
-     * 替换参数占位符
-     */
-    public String replaceParameterPlaceholders(String template) {
+    private OkHttpResponse executeRequest(BaseExternalSystemParams.HttpMethod method, String url,
+                                          Map<String, String> headers, Map<String, Object> requestParams,
+                                          Map<String, Object> requestBody, int connectTimeout, int readTimeout,
+                                          int writeTimeout) throws TaskException {
+        int maxRetries = 3;
+        int retryCount = 0;
+        while (retryCount < maxRetries) {
+            OkHttpRequestHeaders okHttpRequestHeaders = new OkHttpRequestHeaders();
+            okHttpRequestHeaders.setHeaders(headers);
+            okHttpRequestHeaders.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_JSON);
+            try {
+                switch (method) {
+                    case POST:
+                        return OkHttpUtils.post(url, okHttpRequestHeaders, requestParams, requestBody, connectTimeout,
+                                readTimeout, writeTimeout);
+                    case PUT:
+                        return OkHttpUtils.put(url, okHttpRequestHeaders, requestBody, connectTimeout, readTimeout,
+                                writeTimeout);
+                    case GET:
+                        return OkHttpUtils.get(url, okHttpRequestHeaders, requestParams, connectTimeout, readTimeout,
+                                writeTimeout);
+                    default:
+                        throw new TaskException("Unsupported HTTP method: " + method);
+                }
+            } catch (Exception e) {
+                retryCount++;
+                log.warn("Request failed, retrying... (attempt {}/{})", retryCount, maxRetries, e);
+                if (retryCount >= maxRetries) {
+                    throw new TaskException("Request failed after " + maxRetries + " retries", e);
+                }
+                try {
+                    TimeUnit.SECONDS.sleep(5);
+                } catch (InterruptedException ie) {
+                    Thread.currentThread().interrupt();
+                    throw new TaskException("Request retry interrupted", ie);
+                }
+            }
+        }
+        return null; // This line should never be reached
+    }
+
+    private void buildAuthHeader(String accessToken, Map<String, String> headers) {
+        headers.put("Authorization", accessToken);
+    }
+    private Map<String, String> buildHeaders(BaseExternalSystemParams.InterfaceConfig config) {
+        Map<String, String> requestParams = new HashMap<>();
+        for (BaseExternalSystemParams.RequestParameter param : config.getParameters()) {
+            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.HEADER)) {
+                requestParams.put(param.getParamName(), replaceParameterPlaceholders(param.getParamValue()));
+            }
+        }
+        return requestParams;
+    }
+    private Map<String, Object> buildRequestBody(BaseExternalSystemParams.InterfaceConfig config) {
+        Map<String, Object> requestBody = new HashMap<>();
+        if (config.getHttpBody() != null) {
+            requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(config.getHttpBody()), Map.class);
+        }
+        return requestBody;
+    }
+
+    private Map<String, Object> buildRequestParams(BaseExternalSystemParams.InterfaceConfig config) {
+        Map<String, Object> requestParams = new HashMap<>();
+        for (BaseExternalSystemParams.RequestParameter param : config.getParameters()) {
+            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.PARAM)) {
+                requestParams.put(param.getParamName(), replaceParameterPlaceholders(param.getParamValue()));
+            }
+        }
+        return requestParams;
+    }
+
+    private String replaceParameterPlaceholders(String template) {
         if (StringUtils.isEmpty(template)) {
             return template;
         }
@@ -370,12 +302,8 @@ public class ExternalSystemTask extends AbstractTask {
         return result.toString();
     }
 
-    /**
-     * 解析提交响应
-     */
     private void parseSubmitResponse(String responseBody) throws TaskException {
         try {
-            // 查找fieldMappings中的taskInstanceId映射
             for (BaseExternalSystemParams.FieldMapping mapping : baseExternalSystemParams.getFieldMappings()) {
                 if (INTERNAL_TASK_INSTANCE_ID.equals(mapping.getInternalField())) {
                     Object value = JsonPath.read(responseBody, mapping.getExternalField());
@@ -388,7 +316,6 @@ public class ExternalSystemTask extends AbstractTask {
             if (StringUtils.isEmpty(externalTaskInstanceId)) {
                 throw new TaskException("Failed to extract taskInstanceId from submit response");
             }
-
         } catch (Exception e) {
             log.error("submit responseBody:{},Parse response failed:{}", responseBody, e);
             throw new TaskException("Parse submit response failed", e);

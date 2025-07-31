@@ -47,10 +47,10 @@ export function useExternalSystem(
 
     try {
       const res = await queryExternalSystemTasks(externalSystemId)
-        taskOptions.value = res.map((item: any) => ({
-          label: item.name,
-          value: item.id // 确保 value 是字符串
-        }))
+      taskOptions.value = res.map((item: any) => ({
+        label: item.name,
+        value: item.id // 确保 value 是字符串
+      }))
     } catch (error) {
       console.error('Error fetching external system tasks:', error)
     }
@@ -66,6 +66,12 @@ export function useExternalSystem(
   }
 
   const onChange = () => {
+    // 清空任务选项
+    taskOptions.value = []
+    // 清空模型中的任务字段
+    const taskField = params.taskField || 'externalTaskId'
+    model[taskField] = null
+    // 刷新任务选项
     refreshTasks()
   }
 
