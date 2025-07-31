@@ -406,7 +406,7 @@ export default defineComponent({
               <NSelect v-model={[form.pollStatusInterface.method, 'value']} options={methodOptions.value} class={styles['method-select']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.parameters')}>
-              <NDynamicInput v-model={[form.pollStatusInterface.parameters, 'value']} onCreate={() => ({ paramName: '', paramValue: null, location: '', systemField: '' })} >
+              <NDynamicInput v-model={[form.pollStatusInterface.parameters, 'value']} onCreate={() => ({ paramName: '', paramValue: null, location: 'Header', systemField: '' })} >
                 {{
                   default: ({ value }: { value: { paramName: string; paramValue: any; location: string; systemField: string } }) => (
                     <NSpace>
@@ -472,7 +472,7 @@ export default defineComponent({
           <NSpace justify="end">
             <NButton onClick={handleClose}>{t('thirdparty_api_source.cancel')}</NButton>
             <NButton type="primary" onClick={handleTest}>{t('thirdparty_api_source.test')}</NButton>
-            <NButton type="primary" onClick={handleSubmit}>{isEditMode.value ? t('thirdparty_api_source.update') : t('thirdparty_api_source.create')}</NButton>
+            <NButton type="primary" onClick={handleSubmit}>{t('thirdparty_api_source.submit')}</NButton>
           </NSpace>
         </div>
       </NModal >
