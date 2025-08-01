@@ -12,8 +12,8 @@ export default {
   service_address: '服务地址',
   service_address_tips: '请输入服务地址',
   field_mapping: '字段映射',
-  external_field: '系统字段',
-  internal_field: '注册系统字段',
+  internal_field: '系统字段',
+  external_field: '注册系统字段',
   create_time: '创建时间',
   update_time: '更新时间',
 
@@ -116,5 +116,7 @@ export default {
   input_interface_url_required: '入参接口地址为必填项',
   submit_interface_url_required: '提交接口地址为必填项',
   query_interface_url_required: '查询接口地址为必填项',
-  stop_interface_url_required: '停止接口地址为必填项'
+  stop_interface_url_required: '停止接口地址为必填项',
+  success_condition_required: '成功条件字段和值不能为空',
+  failure_condition_required: '失败条件字段和值不能为空'
 } 
