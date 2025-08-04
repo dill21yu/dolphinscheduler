@@ -67,8 +67,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     @Override
     public ExternalSystem createExternalSystem(User loginUser, BaseExternalSystemParams externalSystemParam) {
         // 检查名称是否已存在
-        ExternalSystem existSystem = externalSystemMapper.queryBySystemName(externalSystemParam.getSystemName());
-        if (existSystem != null) {
+        if (checkName(externalSystemParam.getSystemName())) {
             throw new ServiceException(Status.EXTERNAL_SYSTEM_NAME_EXIST);
         }
         checkExternalSystemParam(externalSystemParam);
@@ -81,15 +80,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         // 移除 id 信息
         externalSystemParam.setId(null);
         BaseExternalSystemParams.AuthConfig authConfig = externalSystemParam.getAuthConfig();
-        if (null != authConfig.getOauth2Password() && !authConfig.getOauth2Password().isEmpty()) {
-            PasswordUtils.encodePassword(authConfig.getOauth2Password());
-        }
-        if (null != authConfig.getJwtToken() && !authConfig.getJwtToken().isEmpty()) {
-            PasswordUtils.encodePassword(authConfig.getJwtToken());
-        }
-        if (null != authConfig.getBasicPassword() && !authConfig.getBasicPassword().isEmpty()) {
-            PasswordUtils.encodePassword(authConfig.getBasicPassword());
-        }
+        encodePassword(authConfig);
 
         externalSystem.setConnectionParams(JSONUtils.toJsonString(externalSystemParam));
         externalSystem.setUserId(loginUser.getId());
@@ -98,6 +89,20 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
 
         externalSystemMapper.insert(externalSystem);
         return externalSystem;
+    }
+    private void encodePassword(BaseExternalSystemParams.AuthConfig authConfig) {
+        if (null != authConfig.getOauth2ClientSecret() && !authConfig.getOauth2ClientSecret().isEmpty()) {
+            authConfig.setOauth2ClientSecret(PasswordUtils.encodePassword(authConfig.getOauth2ClientSecret()));
+        }
+        if (null != authConfig.getOauth2Password() && !authConfig.getOauth2Password().isEmpty()) {
+            authConfig.setOauth2Password(PasswordUtils.encodePassword(authConfig.getOauth2Password()));
+        }
+        if (null != authConfig.getJwtToken() && !authConfig.getJwtToken().isEmpty()) {
+            authConfig.setJwtToken(PasswordUtils.encodePassword(authConfig.getJwtToken()));
+        }
+        if (null != authConfig.getBasicPassword() && !authConfig.getBasicPassword().isEmpty()) {
+            authConfig.setBasicPassword(PasswordUtils.encodePassword(authConfig.getBasicPassword()));
+        }
     }
 
     private void checkExternalSystemParam(BaseExternalSystemParams externalSystemParam) {
@@ -201,13 +206,10 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         }
 
         // 检查名称是否被其他系统占用
-        ExternalSystem systemByName = externalSystemMapper.queryBySystemName(updateExternalSystemParam.getSystemName());
-        if (systemByName != null && !systemByName.getId().equals(updateExternalSystemParam.getId())) {
+        if (!updateExternalSystemParam.getSystemName().trim().equals(existingSystem.getName())
+                && checkName(updateExternalSystemParam.getSystemName())) {
             throw new ServiceException(Status.EXTERNAL_SYSTEM_NAME_EXIST);
         }
-
-        // 验证连接参数
-        // ExternalSystemUtils.checkExternalSystemParam(updateExternalSystemParam);
 
         // 更新外部系统记录
         existingSystem.setName(updateExternalSystemParam.getSystemName());
@@ -217,23 +219,42 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         BaseExternalSystemParams oldParams =
                 JSONUtils.parseObject(existingSystem.getConnectionParams(), BaseExternalSystemParams.class);
         BaseExternalSystemParams.AuthConfig updateAuthConfig = updateExternalSystemParam.getAuthConfig();
-        if (updateAuthConfig.getBasicPassword() != null && updateAuthConfig.getBasicPassword() == Constants.XXXXXX) {
+        if (updateAuthConfig.getBasicPassword() != null
+                && updateAuthConfig.getBasicPassword().equals(Constants.XXXXXX)) {
             updateAuthConfig.setBasicPassword(oldParams.getAuthConfig().getBasicPassword());
+        } else if (null != updateAuthConfig.getBasicPassword() && !updateAuthConfig.getBasicPassword().isEmpty()) {
+            updateAuthConfig.setBasicPassword(PasswordUtils.encodePassword(updateAuthConfig.getBasicPassword()));
         }
         if (updateAuthConfig.getOauth2ClientSecret() != null
-                && updateAuthConfig.getOauth2ClientSecret() == Constants.XXXXXX) {
+                && updateAuthConfig.getOauth2ClientSecret().equals(Constants.XXXXXX)) {
             updateAuthConfig.setOauth2ClientSecret(oldParams.getAuthConfig().getOauth2ClientSecret());
+        } else if (null != updateAuthConfig.getOauth2ClientSecret()
+                && !updateAuthConfig.getOauth2ClientSecret().isEmpty()) {
+            updateAuthConfig
+                    .setOauth2ClientSecret(PasswordUtils.encodePassword(updateAuthConfig.getOauth2ClientSecret()));
         }
-        if (updateAuthConfig.getOauth2Password() != null && updateAuthConfig.getOauth2Password() == Constants.XXXXXX) {
+
+        if (updateAuthConfig.getOauth2Password() != null
+                && updateAuthConfig.getOauth2Password().equals(Constants.XXXXXX)) {
             updateAuthConfig.setOauth2Password(oldParams.getAuthConfig().getOauth2Password());
+        } else if (null != updateAuthConfig.getOauth2Password() && !updateAuthConfig.getOauth2Password().isEmpty()) {
+            updateAuthConfig.setOauth2Password(PasswordUtils.encodePassword(updateAuthConfig.getOauth2Password()));
         }
-        if (updateAuthConfig.getJwtToken() != null && updateAuthConfig.getJwtToken() == Constants.XXXXXX) {
+
+        if (updateAuthConfig.getJwtToken() != null && updateAuthConfig.getJwtToken().equals(Constants.XXXXXX)) {
             updateAuthConfig.setJwtToken(oldParams.getAuthConfig().getJwtToken());
+        } else if (null != updateAuthConfig.getJwtToken() && !updateAuthConfig.getJwtToken().isEmpty()) {
+            updateAuthConfig.setJwtToken(PasswordUtils.encodePassword(updateAuthConfig.getJwtToken()));
         }
+
         updateExternalSystemParam.setAuthConfig(updateAuthConfig);
         existingSystem.setConnectionParams(JSONUtils.toJsonString(updateExternalSystemParam));
         externalSystemMapper.updateById(existingSystem);
         return existingSystem;
+    }
+    private boolean checkName(String name) {
+        List<ExternalSystem> systemByName = externalSystemMapper.queryBySystemName(name.trim());
+        return systemByName != null && !systemByName.isEmpty();
     }
 
     @Override
@@ -284,9 +305,42 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             Map<String, String> headeMap = new HashMap<>();
             Map<String, Object> requestBody = new HashMap<>();
             Map<String, Object> requestParams = new HashMap<>();
-            String token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
+            String token;
+            if (null != baseExternalSystemParam.getId()) {
+                ExternalSystem existingSystem = externalSystemMapper.selectById(baseExternalSystemParam.getId());
+                if (existingSystem == null) {
+                    token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
+                } else {
+                    BaseExternalSystemParams oldParams =
+                            JSONUtils.parseObject(existingSystem.getConnectionParams(), BaseExternalSystemParams.class);
+                    BaseExternalSystemParams.AuthConfig authConfig = baseExternalSystemParam.getAuthConfig();
+                    if (authConfig.getBasicPassword() != null
+                            && authConfig.getBasicPassword().equals(Constants.XXXXXX)) {
+                        authConfig.setBasicPassword(oldParams.getAuthConfig().getBasicPassword());
+                    }
+                    if (authConfig.getOauth2ClientSecret() != null
+                            && authConfig.getOauth2ClientSecret().equals(Constants.XXXXXX)) {
+                        authConfig.setOauth2ClientSecret(oldParams.getAuthConfig().getOauth2ClientSecret());
+                    }
+                    if (authConfig.getOauth2Password() != null
+                            && authConfig.getOauth2Password().equals(Constants.XXXXXX)) {
+                        authConfig.setOauth2Password(oldParams.getAuthConfig().getOauth2Password());
+                    }
+                    if (authConfig.getJwtToken() != null && authConfig.getJwtToken().equals(Constants.XXXXXX)) {
+                        authConfig.setJwtToken(oldParams.getAuthConfig().getJwtToken());
+                    }
+                    decodePassword(authConfig);
+                    baseExternalSystemParam.setAuthConfig(authConfig);
+                    token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
+                }
 
-            headeMap.put("Authorization", token);
+            } else {
+                token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
+            }
+
+            headeMap.put("Authorization",
+                    baseExternalSystemParam.getTokenPrefix(baseExternalSystemParam.getAuthConfig().getAuthType())
+                            + token);
             // 处理参数
             for (BaseExternalSystemParams.RequestParameter param : selectConfig.getParameters()) {
                 // todo String value = replaceParameterPlaceholders(param.getParamValue());
@@ -324,6 +378,21 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         } catch (Exception e) {
             log.error("select task failed", e);
             throw new TaskException("select task failed", e);
+        }
+    }
+
+    private void decodePassword(BaseExternalSystemParams.AuthConfig authConfig) {
+        if (null != authConfig.getOauth2ClientSecret() && !authConfig.getOauth2ClientSecret().isEmpty()) {
+            authConfig.setOauth2ClientSecret(PasswordUtils.decodePassword(authConfig.getOauth2ClientSecret()));
+        }
+        if (null != authConfig.getOauth2Password() && !authConfig.getOauth2Password().isEmpty()) {
+            authConfig.setOauth2Password(PasswordUtils.decodePassword(authConfig.getOauth2Password()));
+        }
+        if (null != authConfig.getJwtToken() && !authConfig.getJwtToken().isEmpty()) {
+            authConfig.setJwtToken(PasswordUtils.decodePassword(authConfig.getJwtToken()));
+        }
+        if (null != authConfig.getBasicPassword() && !authConfig.getBasicPassword().isEmpty()) {
+            authConfig.setBasicPassword(PasswordUtils.decodePassword(authConfig.getBasicPassword()));
         }
     }
 

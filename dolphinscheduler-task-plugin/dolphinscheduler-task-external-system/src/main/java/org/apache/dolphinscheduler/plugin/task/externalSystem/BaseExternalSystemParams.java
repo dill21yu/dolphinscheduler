@@ -80,7 +80,7 @@ public class BaseExternalSystemParams {
 
         private String url;
         private HttpMethod method; // 请求方式 GET/POST
-        private String httpBody;
+        private String body;
         private List<RequestParameter> parameters; // 参数列表
     }
 

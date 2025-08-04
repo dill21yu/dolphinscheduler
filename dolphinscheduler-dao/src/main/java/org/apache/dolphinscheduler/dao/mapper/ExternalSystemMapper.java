@@ -33,7 +33,7 @@ public interface ExternalSystemMapper extends BaseMapper<ExternalSystem> {
     /**
      * 根据名称查询外部系统
      */
-    ExternalSystem queryBySystemName(@Param("name") String name);
+    List<ExternalSystem> queryBySystemName(@Param("name") String name);
 
     /**
      * 根据用户ID查询有权限的外部系统列表

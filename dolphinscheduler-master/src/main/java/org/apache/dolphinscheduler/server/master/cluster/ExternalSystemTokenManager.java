@@ -20,6 +20,7 @@ package org.apache.dolphinscheduler.server.master.cluster;
 import org.apache.dolphinscheduler.common.utils.JSONUtils;
 import org.apache.dolphinscheduler.dao.entity.ExternalSystem;
 import org.apache.dolphinscheduler.dao.mapper.ExternalSystemMapper;
+import org.apache.dolphinscheduler.plugin.datasource.api.utils.PasswordUtils;
 import org.apache.dolphinscheduler.plugin.task.api.TaskException;
 import org.apache.dolphinscheduler.plugin.task.externalSystem.AuthenticationUtils;
 import org.apache.dolphinscheduler.plugin.task.externalSystem.BaseExternalSystemParams;
@@ -46,7 +47,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
-
 @Slf4j
 @Component
 public class ExternalSystemTokenManager {
@@ -57,14 +57,6 @@ public class ExternalSystemTokenManager {
     private final Map<String, Object> lockMap = new ConcurrentHashMap<>();
     @Autowired
     private ExternalSystemMapper externalSystemMapper;
-
-    public static String getToken(BaseExternalSystemParams params) {
-        try {
-            return AuthenticationUtils.authenticateAndGetToken(params);
-        } catch (Exception e) {
-            throw new RuntimeException("Failed to get token", e);
-        }
-    }
 
     /**
      * 手动清除指定系统的 Token
@@ -194,6 +186,8 @@ public class ExternalSystemTokenManager {
             String token;
             long expirationTime;
 
+            decodePassword(authConfig);
+
             switch (authConfig.getAuthType()) {
                 case BASIC_AUTH:
                     token = AuthenticationUtils.authenticateAndGetToken(baseParams);
@@ -204,9 +198,7 @@ public class ExternalSystemTokenManager {
                 case JWT:
                     token = AuthenticationUtils.authenticateAndGetToken(baseParams);
                     // JWT 根据配置的过期时间
-                    // todo expirationTime = parseJwtExpiration(authConfig.getJwtSecretOrPublicKey());
                     expirationTime = System.currentTimeMillis() + 24 * 60 * 60 * 1000;
-
                     break;
 
                 case OAUTH2:
@@ -252,7 +244,22 @@ public class ExternalSystemTokenManager {
             log.warn("Failed to parse OAuth2 token expiration, using default", e);
         }
         // 默认1小时后过期
-        return System.currentTimeMillis() + 3600 * 1000;
+        log.warn("OAuth2 token default  ");
+        return System.currentTimeMillis() + 24 * 60 * 60 * 1000;
     }
 
+    private void decodePassword(BaseExternalSystemParams.AuthConfig authConfig) {
+        if (null != authConfig.getOauth2ClientSecret() && !authConfig.getOauth2ClientSecret().isEmpty()) {
+            authConfig.setOauth2ClientSecret(PasswordUtils.decodePassword(authConfig.getOauth2ClientSecret()));
+        }
+        if (null != authConfig.getOauth2Password() && !authConfig.getOauth2Password().isEmpty()) {
+            authConfig.setOauth2Password(PasswordUtils.decodePassword(authConfig.getOauth2Password()));
+        }
+        if (null != authConfig.getJwtToken() && !authConfig.getJwtToken().isEmpty()) {
+            authConfig.setJwtToken(PasswordUtils.decodePassword(authConfig.getJwtToken()));
+        }
+        if (null != authConfig.getBasicPassword() && !authConfig.getBasicPassword().isEmpty()) {
+            authConfig.setBasicPassword(PasswordUtils.decodePassword(authConfig.getBasicPassword()));
+        }
+    }
 }
