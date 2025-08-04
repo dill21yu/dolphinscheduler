@@ -116,5 +116,7 @@ export default {
   input_interface_url_required: 'Input interface address is required',
   submit_interface_url_required: 'Submit interface address is required',
   query_interface_url_required: 'Query interface address is required',
-  stop_interface_url_required: 'Stop interface address is required'
+  stop_interface_url_required: 'Stop interface address is required',
+  success_condition_required: 'Success condition field and value cannot be empty',
+  failure_condition_required: 'Failure condition field and value cannot be empty'
 } 

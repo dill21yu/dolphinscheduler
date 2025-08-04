@@ -45,9 +45,9 @@ export default defineComponent({
       systemName: '',
       serviceAddress: '',
       fieldMappings: [
-        { externalField: 'id', internalField: '' },
-        { externalField: 'name', internalField: '' },
-        { externalField: 'taskInstanceId', internalField: '' }
+        { externalField: '', internalField: 'id' },
+        { externalField: '', internalField: 'name' },
+        { externalField: '', internalField: 'taskInstanceId' }
       ],
       authConfig: {
         authType: 'BASIC_AUTH',
@@ -196,6 +196,30 @@ export default defineComponent({
       ],
       'stopInterface.url': [
         { required: true, message: t('thirdparty_api_source.stop_interface_url_required'), trigger: ['blur', 'change'] }
+      ],
+      // 成功条件整体校验
+      'pollStatusInterface.pollingSuccessConfig': [
+        {
+          validator: (rule: any, value: any) => {
+            if (!value.successField || !value.successValue) {
+              return new Error(t('thirdparty_api_source.success_condition_required'))
+            }
+            return true
+          },
+          trigger: ['blur', 'change']
+        }
+      ],
+      // 失败条件整体校验
+      'pollStatusInterface.pollingFailureConfig': [
+        {
+          validator: (rule: any, value: any) => {
+            if (!value.failureField || !value.failureValue) {
+              return new Error(t('thirdparty_api_source.failure_condition_required'))
+            }
+            return true
+          },
+          trigger: ['blur', 'change']
+        }
       ]
     }
 
@@ -211,49 +235,100 @@ export default defineComponent({
         .map((item) => ({ label: item.externalField, value: item.externalField }))
     })
 
-    watch(() => props.data, (val) => {
-      if (val && isEditMode.value) {
-        Object.assign(form, JSON.parse(JSON.stringify(val)))
-      } else {
-        Object.assign(form, {
-          systemName: '',
-          serviceAddress: '',
-          fieldMappings: [
-            { externalField: 'id', internalField: '' },
-            { externalField: 'name', internalField: '' },
-            { externalField: 'taskInstanceId', internalField: '' }
-          ],
-          authConfig: {
-            authType: 'BASIC_AUTH',
-            basicUsername: '',
-            basicPassword: '',
-            jwtToken: '',
-            oauth2TokenUrl: '',
-            oauth2ClientId: '',
-            oauth2ClientSecret: '',
-            oauth2GrantType: '',
-            oauth2Username: '',
-            oauth2Password: '',
-            authMappings: []
-          },
-          selectInterface: { url: '', method: 'GET', parameters: [], body: '' },
-          submitInterface: { url: '', method: 'POST', parameters: [], body: '' },
-          pollStatusInterface: {
-            url: '', method: 'GET', parameters: [], body: '',
-            pollingSuccessConfig: { successField: '', successValue: '' },
-            pollingFailureConfig: { failureField: '', failureValue: '' }
-          },
-          stopInterface: { url: '', method: 'POST', parameters: [], body: '' }
-        })
+    // 定义表单的初始状态
+    const getInitialFormState = () => ({
+      systemName: '',
+      serviceAddress: '',
+      fieldMappings: [
+        { externalField: '', internalField: 'id' },
+        { externalField: '', internalField: 'name' },
+        { externalField: '', internalField: 'taskInstanceId' }
+      ],
+      authConfig: {
+        authType: 'BASIC_AUTH',
+        basicUsername: '',
+        basicPassword: '',
+        jwtToken: '',
+        oauth2TokenUrl: '',
+        oauth2ClientId: '',
+        oauth2ClientSecret: '',
+        oauth2GrantType: '',
+        oauth2Username: '',
+        oauth2Password: '',
+        authMappings: []
+      },
+      selectInterface: { url: '', method: 'GET', parameters: [], body: '' },
+      submitInterface: { url: '', method: 'POST', parameters: [], body: '' },
+      pollStatusInterface: {
+        url: '', method: 'GET', parameters: [], body: '',
+        pollingSuccessConfig: { successField: '', successValue: '' },
+        pollingFailureConfig: { failureField: '', failureValue: '' }
+      },
+      stopInterface: { url: '', method: 'POST', parameters: [], body: '' }
+    })
+
+    // 重置表单数据的函数
+    const resetForm = () => {
+      // 完全重新创建表单对象，确保清理所有额外属性
+      const initialState = getInitialFormState()
+      Object.keys(form).forEach(key => {
+        delete (form as any)[key]
+      })
+      Object.assign(form, initialState)
+      // 清除表单校验错误
+      formRef.value?.restoreValidation?.()
+    }
+
+    // 保存原始编辑数据，用于测试连接
+    const originalEditData = ref<any>(null)
+
+    // 监听modal显示状态和数据变化
+    watch([() => props.show, () => props.data, () => props.operationType], ([show, data, operationType]) => {
+      if (show) {
+        if (data && operationType === 'edit') {
+          // 编辑模式：使用接口返回的完整数据
+          originalEditData.value = JSON.parse(JSON.stringify(data))
+          resetForm()
+          const editData = originalEditData.value
+          // 只复制表单中定义的字段到表单对象，保持表单干净
+          const initialState = getInitialFormState()
+          Object.keys(initialState).forEach(key => {
+            if (editData.hasOwnProperty(key)) {
+              ; (form as any)[key] = editData[key]
+            }
+          })
+        } else {
+          // 创建模式：完全重置，确保页面和数据都干净
+          originalEditData.value = null
+          resetForm()
+        }
       }
     }, { immediate: true })
 
-    const handleClose = () => emit('close')
+    const handleClose = () => {
+      // 关闭时重置表单数据
+      resetForm()
+      emit('close')
+    }
     // 修改：提交时校验
     const handleSubmit = () => {
       (formRef.value as any)?.validate((errors: any) => {
         if (!errors) {
-          emit('submit', JSON.parse(JSON.stringify(form)))
+          if (isEditMode.value && originalEditData.value) {
+            // 编辑模式：使用原始数据（包含id等字段）进行提交
+            const submitData = JSON.parse(JSON.stringify(originalEditData.value))
+            // 用当前表单数据更新原始数据
+            const initialState = getInitialFormState()
+            Object.keys(initialState).forEach(key => {
+              if (form.hasOwnProperty(key)) {
+                submitData[key] = (form as any)[key]
+              }
+            })
+            emit('submit', submitData)
+          } else {
+            // 创建模式：使用表单数据
+            emit('submit', JSON.parse(JSON.stringify(form)))
+          }
         }
       })
     }
@@ -261,7 +336,21 @@ export default defineComponent({
     const handleTest = () => {
       (formRef.value as any)?.validate((errors: any) => {
         if (!errors) {
-          emit('test', JSON.parse(JSON.stringify(form)))
+          if (isEditMode.value && originalEditData.value) {
+            // 编辑模式：使用原始数据（包含id等字段）进行测试
+            const testData = JSON.parse(JSON.stringify(originalEditData.value))
+            // 用当前表单数据更新原始数据
+            const initialState = getInitialFormState()
+            Object.keys(initialState).forEach(key => {
+              if (form.hasOwnProperty(key)) {
+                testData[key] = (form as any)[key]
+              }
+            })
+            emit('test', testData)
+          } else {
+            // 创建模式：使用表单数据
+            emit('test', JSON.parse(JSON.stringify(form)))
+          }
         }
       })
     }
@@ -303,12 +392,12 @@ export default defineComponent({
                   default: ({ value }: { value: { externalField: string; internalField: string } }) => (
                     <NSpace>
                       <NInput
-                        v-model={[value.externalField, 'value']}
-                        placeholder={t('thirdparty_api_source.external_field')}
-                      />
-                      <NInput
                         v-model={[value.internalField, 'value']}
                         placeholder={t('thirdparty_api_source.internal_field')}
+                      />
+                      <NInput
+                        v-model={[value.externalField, 'value']}
+                        placeholder={t('thirdparty_api_source.external_field')}
                       />
                     </NSpace>
                   )
@@ -464,13 +553,13 @@ export default defineComponent({
                 />
               </NFormItem>
             )}
-            <NFormItem label={t('thirdparty_api_source.success_condition')}>
-              <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successField, 'value']} placeholder={t('thirdparty_api_source.success_field_tips')} class={styles['condition-field']} />
-              <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.success_value_tips')} class={styles['condition-value']} />
+            <NFormItem label={t('thirdparty_api_source.success_condition')} path="pollStatusInterface.pollingSuccessConfig" required>
+              <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successField, 'value']} placeholder={t('thirdparty_api_source.success_field_tips')} class={styles['condition-field']} onChange={() => formRef.value?.validate?.()} />
+              <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.success_value_tips')} class={styles['condition-value']} onChange={() => formRef.value?.validate?.()} />
             </NFormItem>
-            <NFormItem label={t('thirdparty_api_source.failure_condition')}>
-              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.failureField, 'value']} placeholder={t('thirdparty_api_source.failure_field_tips')} class={styles['condition-field']} />
-              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.failureValue, 'value']} placeholder={t('thirdparty_api_source.failure_value_tips')} class={styles['condition-value']} />
+            <NFormItem label={t('thirdparty_api_source.failure_condition')} path="pollStatusInterface.pollingFailureConfig" required>
+              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.failureField, 'value']} placeholder={t('thirdparty_api_source.failure_field_tips')} class={styles['condition-field']} onChange={() => formRef.value?.validate?.()} />
+              <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.failureValue, 'value']} placeholder={t('thirdparty_api_source.failure_value_tips')} class={styles['condition-value']} onChange={() => formRef.value?.validate?.()} />
             </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.stop_interface')} path="stopInterface.url" required>
