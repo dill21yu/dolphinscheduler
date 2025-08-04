@@ -269,8 +269,8 @@ public class ExternalSystemTask extends AbstractTask {
     }
     private Map<String, Object> buildRequestBody(BaseExternalSystemParams.InterfaceConfig config) {
         Map<String, Object> requestBody = new HashMap<>();
-        if (config.getHttpBody() != null) {
-            requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(config.getHttpBody()), Map.class);
+        if (config.getBody() != null) {
+            requestBody = JSONUtils.parseObject(replaceParameterPlaceholders(config.getBody()), Map.class);
         }
         return requestBody;
     }
