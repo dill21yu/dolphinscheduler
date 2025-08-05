@@ -34,6 +34,7 @@ import org.apache.commons.lang3.StringUtils;
 
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
@@ -45,8 +46,8 @@ import com.jayway.jsonpath.JsonPath;
 @Slf4j
 public class ExternalSystemTask extends AbstractTask {
 
-    private static final String EXTERNAL_TASK_ID = "externalTaskId";// todo
-    private static final String INTERNAL_TASK_INSTANCE_ID = "taskInstanceId";
+    private static final String EXTERNAL_TASK_ID = "id";
+    private static final String EXTERNAL_TASK_NAME = "name";
     private Boolean traceEnabled = true;
 
     private ExternalSystemParameters externalSystemParameters;
@@ -126,7 +127,7 @@ public class ExternalSystemTask extends AbstractTask {
                 throw new TaskException("Submit task failed: " + response.getBody());
             }
 
-            parseSubmitResponse(response.getBody());
+            parseSubmitResponse(submitConfig.getResponseParameters(),response.getBody());
             log.info("Task submitted successfully, external task instance id: {}", externalTaskInstanceId);
         } catch (Exception e) {
             log.error("Submit task failed", e);
@@ -205,7 +206,7 @@ public class ExternalSystemTask extends AbstractTask {
                     30000, 30000, 30000);
 
             if (response.getStatusCode() != 200) {
-                throw new TaskException("polling task failed: " + response.getBody());
+                throw new TaskException("Cancel task failed: " + response.getBody());
             }
             log.info("Cancel task result: {}", response.getBody());
         } catch (Exception e) {
@@ -261,7 +262,7 @@ public class ExternalSystemTask extends AbstractTask {
     private Map<String, String> buildHeaders(BaseExternalSystemParams.InterfaceConfig config) {
         Map<String, String> requestParams = new HashMap<>();
         for (BaseExternalSystemParams.RequestParameter param : config.getParameters()) {
-            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.HEADER)) {
+            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.Header)) {
                 requestParams.put(param.getParamName(), replaceParameterPlaceholders(param.getParamValue()));
             }
         }
@@ -278,7 +279,7 @@ public class ExternalSystemTask extends AbstractTask {
     private Map<String, Object> buildRequestParams(BaseExternalSystemParams.InterfaceConfig config) {
         Map<String, Object> requestParams = new HashMap<>();
         for (BaseExternalSystemParams.RequestParameter param : config.getParameters()) {
-            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.PARAM)) {
+            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.Query)) {
                 requestParams.put(param.getParamName(), replaceParameterPlaceholders(param.getParamValue()));
             }
         }
@@ -302,26 +303,31 @@ public class ExternalSystemTask extends AbstractTask {
         return result.toString();
     }
 
-    private void parseSubmitResponse(String responseBody) throws TaskException {
+    private void parseSubmitResponse(List<BaseExternalSystemParams.ResponseParameter> responseParameters, String responseBody) throws TaskException {
         try {
-            for (BaseExternalSystemParams.FieldMapping mapping : baseExternalSystemParams.getFieldMappings()) {
-                if (INTERNAL_TASK_INSTANCE_ID.equals(mapping.getInternalField())) {
-                    Object value = JsonPath.read(responseBody, mapping.getExternalField());
-                    externalTaskInstanceId = String.valueOf(value);
-                    parameterMap.put(INTERNAL_TASK_INSTANCE_ID, externalTaskInstanceId);
-                    break;
-                }
-            }
+            for (BaseExternalSystemParams.ResponseParameter param : responseParameters) {
+                String jsonPath = param.getJsonPath();
+                String key = param.getKey();
+                Object value = JsonPath.read(responseBody, jsonPath);
 
-            if (StringUtils.isEmpty(externalTaskInstanceId)) {
-                throw new TaskException("Failed to extract taskInstanceId from submit response");
+                if (value == null) {
+                    log.warn("Response parameter {} not found in response body", key);
+                    continue;
+                }
+
+//                if (EXTERNAL_TASK_ID.equals(key)) {
+//                    externalTaskInstanceId = value.toString().replace("\"", "");
+//                    log.info("Parsed external task instance id: {}", externalTaskInstanceId);
+//                }
+                    parameterMap.put(key, value.toString().replace("\"", ""));
+                    log.info("Parsed parameter {}: {}", key, value.toString());
+
             }
         } catch (Exception e) {
-            log.error("submit responseBody:{},Parse response failed:{}", responseBody, e);
+            log.error("Parse submit response failed", e);
             throw new TaskException("Parse submit response failed", e);
         }
     }
-
     @Override
     public AbstractParameters getParameters() {
         return this.externalSystemParameters;
@@ -338,8 +344,8 @@ public class ExternalSystemTask extends AbstractTask {
             }
         }
         if (externalSystemParameters.getExternalTaskId() != null) {
-
             parameterMap.put(EXTERNAL_TASK_ID, externalSystemParameters.getExternalTaskId());
+            parameterMap.put(EXTERNAL_TASK_NAME, externalSystemParameters.getExternalTaskName());
         }
     }
 

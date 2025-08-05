@@ -498,12 +498,12 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         // 校验查询必要
         String taskIdExpression = "";
         String taskNameExpression = "";
-        for (BaseExternalSystemParams.FieldMapping mapping : baseExternalSystemParam.getFieldMappings()) {
-            if ("id".equals(mapping.getInternalField())) {
-                taskIdExpression = mapping.getExternalField();
+        for (BaseExternalSystemParams.ResponseParameter param : baseExternalSystemParam.getSelectInterface().getResponseParameters()) {
+            if ("id".equals(param.getKey())) {
+                taskIdExpression = param.getJsonPath();
             }
-            if ("name".equals(mapping.getInternalField())) {
-                taskNameExpression = mapping.getExternalField();
+            if ("name".equals(param.getKey())) {
+                taskNameExpression = param.getJsonPath();
             }
         }
         if (taskIdExpression.isEmpty() || taskNameExpression.isEmpty()) {
