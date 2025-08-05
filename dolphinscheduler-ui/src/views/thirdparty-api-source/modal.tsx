@@ -231,8 +231,8 @@ export default defineComponent({
 
     const systemFieldOptions = computed(() => {
       return form.fieldMappings
-        .filter(item => item.externalField)
-        .map((item) => ({ label: item.externalField, value: item.externalField }))
+        .filter(item => item.internalField)
+        .map((item) => ({ label: item.internalField, value: item.internalField }))
     })
 
     // 定义表单的初始状态
@@ -358,8 +358,8 @@ export default defineComponent({
     // location 下拉选项与 method 联动
     const getLocationOptions = (method: string) => {
       return [
-        { label: 'Header', value: 'Header' },
-        { label: 'Query', value: 'Query' }
+        { label: 'Header', value: 'HEADER' },
+        { label: 'Param', value: 'PARAM' }
       ]
     }
 
@@ -462,7 +462,7 @@ export default defineComponent({
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.selectInterface.parameters, 'value']}
-                onCreate={() => ({ paramName: '', paramValue: null, location: 'Header' })}
+                onCreate={() => ({ paramName: '', paramValue: null, location: 'HEADER' })}
                 style={{ width: '100%' }}
               >
                 {{
@@ -495,7 +495,7 @@ export default defineComponent({
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.submitInterface.parameters, 'value']}
-                onCreate={() => ({ paramName: '', paramValue: null, location: 'Header' })}
+                onCreate={() => ({ paramName: '', paramValue: null, location: 'HEADER' })}
                 style={{ width: '100%' }}
               >
                 {{
@@ -528,7 +528,7 @@ export default defineComponent({
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.pollStatusInterface.parameters, 'value']}
-                onCreate={() => ({ paramName: '', paramValue: null, location: 'Header', systemField: '' })}
+                onCreate={() => ({ paramName: '', paramValue: null, location: 'HEADER', systemField: '' })}
                 style={{ width: '100%' }}
               >
                 {{
@@ -569,7 +569,7 @@ export default defineComponent({
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.stopInterface.parameters, 'value']}
-                onCreate={() => ({ paramName: '', paramValue: null, location: 'Header' })}
+                onCreate={() => ({ paramName: '', paramValue: null, location: 'HEADER' })}
                 style={{ width: '100%' }}
               >
                 {{
