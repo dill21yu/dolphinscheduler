@@ -283,7 +283,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     @Override
     public boolean testExternalSystemConnection(User loginUser, BaseExternalSystemParams baseExternalSystemParam) {
         try {
-            OkHttpResponse response = callSelectInterface(baseExternalSystemParam);
+            OkHttpResponse response = callSelectInterface(baseExternalSystemParam, false);
             if (response.getStatusCode() == 200) {
                 return true;
             }
@@ -293,8 +293,12 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_FAILED);
     }
 
-    private OkHttpResponse callSelectInterface(BaseExternalSystemParams baseExternalSystemParam) {
+    private OkHttpResponse callSelectInterface(BaseExternalSystemParams baseExternalSystemParam, boolean dbPassword) {
         try {
+            if (baseExternalSystemParam == null || baseExternalSystemParam.getSelectInterface() == null) {
+                throw new IllegalArgumentException("BaseExternalSystemParams or SelectInterface cannot be null");
+            }
+
             BaseExternalSystemParams.InterfaceConfig selectConfig = baseExternalSystemParam.getSelectInterface();
 
             // 替换参数占位符
@@ -307,41 +311,54 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             Map<String, Object> requestBody = new HashMap<>();
             Map<String, Object> requestParams = new HashMap<>();
             String token;
-            if (null != baseExternalSystemParam.getId()) {
-                ExternalSystem existingSystem = externalSystemMapper.selectById(baseExternalSystemParam.getId());
-                if (existingSystem == null) {
-                    token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
+
+            if (dbPassword) {
+                // 已保存信息，从数据库中获取，并解密
+                BaseExternalSystemParams.AuthConfig authConfig = baseExternalSystemParam.getAuthConfig();
+                decodePassword(authConfig);
+                baseExternalSystemParam.setAuthConfig(authConfig);
+                token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
+            } else {
+                if (baseExternalSystemParam.getId() != null) {
+                    ExternalSystem existingSystem = externalSystemMapper.selectById(baseExternalSystemParam.getId());
+                    if (existingSystem == null) {
+                        // 新建信息测试连接
+                        token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
+                    } else {
+                        // 更新信息测试连接，如果密码没有修改，则使用数据库中保存的密码进行测试连接
+                        BaseExternalSystemParams oldParams =
+                                JSONUtils.parseObject(existingSystem.getConnectionParams(),
+                                        BaseExternalSystemParams.class);
+                        BaseExternalSystemParams.AuthConfig authConfig = baseExternalSystemParam.getAuthConfig();
+                        if (authConfig.getBasicPassword() != null
+                                && authConfig.getBasicPassword().equals(Constants.XXXXXX)) {
+                            authConfig.setBasicPassword(oldParams.getAuthConfig().getBasicPassword());
+                        }
+                        if (authConfig.getOauth2ClientSecret() != null
+                                && authConfig.getOauth2ClientSecret().equals(Constants.XXXXXX)) {
+                            authConfig.setOauth2ClientSecret(oldParams.getAuthConfig().getOauth2ClientSecret());
+                        }
+                        if (authConfig.getOauth2Password() != null
+                                && authConfig.getOauth2Password().equals(Constants.XXXXXX)) {
+                            authConfig.setOauth2Password(oldParams.getAuthConfig().getOauth2Password());
+                        }
+                        if (authConfig.getJwtToken() != null && authConfig.getJwtToken().equals(Constants.XXXXXX)) {
+                            authConfig.setJwtToken(oldParams.getAuthConfig().getJwtToken());
+                        }
+                        decodePassword(authConfig);
+                        baseExternalSystemParam.setAuthConfig(authConfig);
+                        token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
+                    }
                 } else {
-                    BaseExternalSystemParams oldParams =
-                            JSONUtils.parseObject(existingSystem.getConnectionParams(), BaseExternalSystemParams.class);
-                    BaseExternalSystemParams.AuthConfig authConfig = baseExternalSystemParam.getAuthConfig();
-                    if (authConfig.getBasicPassword() != null
-                            && authConfig.getBasicPassword().equals(Constants.XXXXXX)) {
-                        authConfig.setBasicPassword(oldParams.getAuthConfig().getBasicPassword());
-                    }
-                    if (authConfig.getOauth2ClientSecret() != null
-                            && authConfig.getOauth2ClientSecret().equals(Constants.XXXXXX)) {
-                        authConfig.setOauth2ClientSecret(oldParams.getAuthConfig().getOauth2ClientSecret());
-                    }
-                    if (authConfig.getOauth2Password() != null
-                            && authConfig.getOauth2Password().equals(Constants.XXXXXX)) {
-                        authConfig.setOauth2Password(oldParams.getAuthConfig().getOauth2Password());
-                    }
-                    if (authConfig.getJwtToken() != null && authConfig.getJwtToken().equals(Constants.XXXXXX)) {
-                        authConfig.setJwtToken(oldParams.getAuthConfig().getJwtToken());
-                    }
-                    decodePassword(authConfig);
-                    baseExternalSystemParam.setAuthConfig(authConfig);
+                    // 新建信息测试连接
                     token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
                 }
-
-            } else {
-                token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
             }
 
             headeMap.put("Authorization",
                     baseExternalSystemParam.getTokenPrefix(baseExternalSystemParam.getAuthConfig().getAuthType())
                             + token);
+
             // 处理参数
             for (BaseExternalSystemParams.RequestParameter param : selectConfig.getParameters()) {
                 // todo String value = replaceParameterPlaceholders(param.getParamValue());
@@ -377,7 +394,8 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             return response;
 
         } catch (Exception e) {
-            log.error("select task failed", e);
+            log.error("select task failed, baseExternalSystemParam: {}, dbPassword: {}", baseExternalSystemParam,
+                    dbPassword, e);
             throw new TaskException("select task failed", e);
         }
     }
@@ -512,7 +530,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             throw new IllegalStateException("External field mapping for 'id' and 'name' not found");
         }
 
-        OkHttpResponse selectResponse = callSelectInterface(baseExternalSystemParam);
+        OkHttpResponse selectResponse = callSelectInterface(baseExternalSystemParam, true);
         if (selectResponse.getStatusCode() != 200) {
             throw new TaskException("Select task failed: " + selectResponse.getBody());
         }

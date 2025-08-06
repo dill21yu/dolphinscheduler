@@ -125,7 +125,7 @@ public class BaseExternalSystemParams {
 
     // 枚举：参数位置
     public enum ParamLocation {
-        Header, Query
+        HEADER, PARAM
     }
 
     @Data
