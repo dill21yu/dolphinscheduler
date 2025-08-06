@@ -267,7 +267,7 @@ public class ExternalSystemTask extends AbstractTask {
     private Map<String, String> buildHeaders(BaseExternalSystemParams.InterfaceConfig config) {
         Map<String, String> requestParams = new HashMap<>();
         for (BaseExternalSystemParams.RequestParameter param : config.getParameters()) {
-            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.Header)) {
+            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.HEADER)) {
                 requestParams.put(param.getParamName(), replaceParameterPlaceholders(param.getParamValue()));
             }
         }
@@ -285,7 +285,7 @@ public class ExternalSystemTask extends AbstractTask {
     private Map<String, Object> buildRequestParams(BaseExternalSystemParams.InterfaceConfig config) {
         Map<String, Object> requestParams = new HashMap<>();
         for (BaseExternalSystemParams.RequestParameter param : config.getParameters()) {
-            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.Query)) {
+            if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.PARAM)) {
                 requestParams.put(param.getParamName(), replaceParameterPlaceholders(param.getParamValue()));
             }
         }
