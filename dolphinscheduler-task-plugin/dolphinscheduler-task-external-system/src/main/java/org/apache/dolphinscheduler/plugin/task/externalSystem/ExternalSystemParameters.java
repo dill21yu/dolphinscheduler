@@ -36,6 +36,8 @@ public class ExternalSystemParameters extends AbstractParameters {
     private String authenticationToken;
 
     private String externalTaskId;
+    private String externalTaskName;
+
 
     @Override
     public ResourceParametersHelper getResources() {

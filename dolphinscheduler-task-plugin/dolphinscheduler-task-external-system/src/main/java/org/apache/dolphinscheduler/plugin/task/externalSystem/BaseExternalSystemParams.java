@@ -31,7 +31,6 @@ public class BaseExternalSystemParams {
     private String systemName; // 系统名称
     private String serviceAddress; // 服务地址
 
-    private List<FieldMapping> fieldMappings; // 字段映射列表
 
     private AuthConfig authConfig; // 认证配置
 
@@ -40,12 +39,6 @@ public class BaseExternalSystemParams {
     private PollingInterfaceConfig pollStatusInterface; // 轮询状态接口配置
     private InterfaceConfig stopInterface; // 停止接口配置
 
-    @Data
-    public static class FieldMapping {
-
-        private String externalField; // 外部系统字段名
-        private String internalField; // 注册系统字段名
-    }
 
     @Data
     public static class AuthConfig {
@@ -82,6 +75,8 @@ public class BaseExternalSystemParams {
         private HttpMethod method; // 请求方式 GET/POST
         private String body;
         private List<RequestParameter> parameters; // 参数列表
+        private List<ResponseParameter> responseParameters; // 参数列表
+
     }
 
     @Data
@@ -97,6 +92,12 @@ public class BaseExternalSystemParams {
         private String paramName; // 参数名
         private String paramValue; // 参数值（可以是固定值或占位符）
         private ParamLocation location; // 参数所在位置（header,param,body）
+    }
+
+    @Data
+    public static class ResponseParameter {
+        private String key;
+        private String jsonPath;
     }
 
     @Data
@@ -125,7 +126,7 @@ public class BaseExternalSystemParams {
 
     // 枚举：参数位置
     public enum ParamLocation {
-        HEADER, PARAM
+        Header, Query
     }
 
     @Data

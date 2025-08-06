@@ -63,7 +63,8 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
 
     @Autowired
     private ExternalSystemMapper externalSystemMapper;
-
+    private static final String EXTERNAL_TASK_ID = "id";
+    private static final String EXTERNAL_TASK_NAME = "name";
     @Override
     public ExternalSystem createExternalSystem(User loginUser, BaseExternalSystemParams externalSystemParam) {
         // 检查名称是否已存在
@@ -498,12 +499,12 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         // 校验查询必要
         String taskIdExpression = "";
         String taskNameExpression = "";
-        for (BaseExternalSystemParams.FieldMapping mapping : baseExternalSystemParam.getFieldMappings()) {
-            if ("id".equals(mapping.getInternalField())) {
-                taskIdExpression = mapping.getExternalField();
+        for (BaseExternalSystemParams.ResponseParameter param : baseExternalSystemParam.getSelectInterface().getResponseParameters()) {
+            if (EXTERNAL_TASK_ID.equals(param.getKey())) {
+                taskIdExpression = param.getJsonPath();
             }
-            if ("name".equals(mapping.getInternalField())) {
-                taskNameExpression = mapping.getExternalField();
+            if (EXTERNAL_TASK_NAME.equals(param.getKey())) {
+                taskNameExpression = param.getJsonPath();
             }
         }
         if (taskIdExpression.isEmpty() || taskNameExpression.isEmpty()) {
