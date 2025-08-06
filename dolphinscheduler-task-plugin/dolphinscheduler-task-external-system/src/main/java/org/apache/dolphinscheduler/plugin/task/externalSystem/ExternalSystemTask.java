@@ -29,6 +29,7 @@ import org.apache.dolphinscheduler.plugin.task.api.TaskException;
 import org.apache.dolphinscheduler.plugin.task.api.TaskExecutionContext;
 import org.apache.dolphinscheduler.plugin.task.api.model.Property;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.AbstractParameters;
+import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;
 
 import org.apache.commons.lang3.StringUtils;
 
@@ -42,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 import com.jayway.jsonpath.JsonPath;
-import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;
 
 @Slf4j
 public class ExternalSystemTask extends AbstractTask {
@@ -310,7 +310,8 @@ public class ExternalSystemTask extends AbstractTask {
         return resultString;
     }
 
-    private void parseSubmitResponse(List<BaseExternalSystemParams.ResponseParameter> responseParameters, String responseBody) throws TaskException {
+    private void parseSubmitResponse(List<BaseExternalSystemParams.ResponseParameter> responseParameters,
+                                     String responseBody) throws TaskException {
         try {
             for (BaseExternalSystemParams.ResponseParameter param : responseParameters) {
                 String jsonPath = param.getJsonPath();

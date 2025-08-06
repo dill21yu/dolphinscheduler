@@ -31,14 +31,12 @@ public class BaseExternalSystemParams {
     private String systemName; // 系统名称
     private String serviceAddress; // 服务地址
 
-
     private AuthConfig authConfig; // 认证配置
 
     private InterfaceConfig selectInterface; // 查询接口配置
     private InterfaceConfig submitInterface; // 提交接口配置
     private PollingInterfaceConfig pollStatusInterface; // 轮询状态接口配置
     private InterfaceConfig stopInterface; // 停止接口配置
-
 
     @Data
     public static class AuthConfig {
@@ -96,6 +94,7 @@ public class BaseExternalSystemParams {
 
     @Data
     public static class ResponseParameter {
+
         private String key;
         private String jsonPath;
     }

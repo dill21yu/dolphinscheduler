@@ -499,7 +499,8 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         // 校验查询必要
         String taskIdExpression = "";
         String taskNameExpression = "";
-        for (BaseExternalSystemParams.ResponseParameter param : baseExternalSystemParam.getSelectInterface().getResponseParameters()) {
+        for (BaseExternalSystemParams.ResponseParameter param : baseExternalSystemParam.getSelectInterface()
+                .getResponseParameters()) {
             if (EXTERNAL_TASK_ID.equals(param.getKey())) {
                 taskIdExpression = param.getJsonPath();
             }
