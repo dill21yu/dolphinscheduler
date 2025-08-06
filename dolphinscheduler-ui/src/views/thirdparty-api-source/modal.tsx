@@ -44,11 +44,6 @@ export default defineComponent({
     const form = reactive({
       systemName: '',
       serviceAddress: '',
-      fieldMappings: [
-        { externalField: '', internalField: 'id' },
-        { externalField: '', internalField: 'name' },
-        { externalField: '', internalField: 'taskInstanceId' }
-      ],
       authConfig: {
         authType: 'BASIC_AUTH',
         basicUsername: '',
@@ -66,13 +61,20 @@ export default defineComponent({
         url: '',
         method: 'GET',
         parameters: [] as any[],
-        body: ''
+        body: '',
+        responseParameters: [
+          { key: 'id', jsonPath: '' },
+          { key: 'name', jsonPath: ''}
+        ]
       },
       submitInterface: {
         url: '',
         method: 'POST',
         parameters: [] as any[],
-        body: ''
+        body: '',
+        responseParameters: [
+          { key: 'taskInstanceId', jsonPath: '' }
+        ]
       },
       pollStatusInterface: {
         url: '',
@@ -96,7 +98,7 @@ export default defineComponent({
       }
     })
 
-    // 新增：表单校验规则
+    // 表单校验规则
     const rules = {
       systemName: [
         { required: true, message: t('thirdparty_api_source.system_name_required'), trigger: 'blur' }
@@ -184,7 +186,6 @@ export default defineComponent({
           trigger: 'blur'
         }
       ],
-      // 新增接口地址必填
       'selectInterface.url': [
         { required: true, message: t('thirdparty_api_source.input_interface_url_required'), trigger: ['blur', 'change'] }
       ],
@@ -197,7 +198,6 @@ export default defineComponent({
       'stopInterface.url': [
         { required: true, message: t('thirdparty_api_source.stop_interface_url_required'), trigger: ['blur', 'change'] }
       ],
-      // 成功条件整体校验
       'pollStatusInterface.pollingSuccessConfig': [
         {
           validator: (rule: any, value: any) => {
@@ -209,7 +209,6 @@ export default defineComponent({
           trigger: ['blur', 'change']
         }
       ],
-      // 失败条件整体校验
       'pollStatusInterface.pollingFailureConfig': [
         {
           validator: (rule: any, value: any) => {
@@ -223,27 +222,13 @@ export default defineComponent({
       ]
     }
 
-    // 新增：表单ref
     const formRef = ref<FormInst | null>(null)
-
-    // 根据操作类型判断是否为编辑模式
     const isEditMode = computed(() => props.operationType === 'edit')
-
-    const systemFieldOptions = computed(() => {
-      return form.fieldMappings
-        .filter(item => item.internalField)
-        .map((item) => ({ label: item.internalField, value: item.internalField }))
-    })
 
     // 定义表单的初始状态
     const getInitialFormState = () => ({
       systemName: '',
       serviceAddress: '',
-      fieldMappings: [
-        { externalField: '', internalField: 'id' },
-        { externalField: '', internalField: 'name' },
-        { externalField: '', internalField: 'taskInstanceId' }
-      ],
       authConfig: {
         authType: 'BASIC_AUTH',
         basicUsername: '',
@@ -257,25 +242,43 @@ export default defineComponent({
         oauth2Password: '',
         authMappings: []
       },
-      selectInterface: { url: '', method: 'GET', parameters: [], body: '' },
-      submitInterface: { url: '', method: 'POST', parameters: [], body: '' },
+      selectInterface: {
+        url: '',
+        method: 'GET',
+        parameters: [] as any[],
+        body: '',
+        responseParameters: [
+          { key: 'id', jsonPath: '' },
+          { key: 'name', jsonPath: '' }
+        ]
+      },
+      submitInterface: {
+        url: '',
+        method: 'POST',
+        parameters: [] as any[],
+        body: '',
+        responseParameters: [
+          { key: 'taskInstanceId', jsonPath: '' }
+        ]
+      },
       pollStatusInterface: {
-        url: '', method: 'GET', parameters: [], body: '',
+        url: '',
+        method: 'GET',
+        parameters: [] as any[],
+        body: '',
         pollingSuccessConfig: { successField: '', successValue: '' },
         pollingFailureConfig: { failureField: '', failureValue: '' }
       },
-      stopInterface: { url: '', method: 'POST', parameters: [], body: '' }
+      stopInterface: { url: '', method: 'POST', parameters: [] as any[], body: '' }
     })
 
     // 重置表单数据的函数
     const resetForm = () => {
-      // 完全重新创建表单对象，确保清理所有额外属性
       const initialState = getInitialFormState()
       Object.keys(form).forEach(key => {
         delete (form as any)[key]
       })
       Object.assign(form, initialState)
-      // 清除表单校验错误
       formRef.value?.restoreValidation?.()
     }
 
@@ -286,11 +289,9 @@ export default defineComponent({
     watch([() => props.show, () => props.data, () => props.operationType], ([show, data, operationType]) => {
       if (show) {
         if (data && operationType === 'edit') {
-          // 编辑模式：使用接口返回的完整数据
           originalEditData.value = JSON.parse(JSON.stringify(data))
           resetForm()
           const editData = originalEditData.value
-          // 只复制表单中定义的字段到表单对象，保持表单干净
           const initialState = getInitialFormState()
           Object.keys(initialState).forEach(key => {
             if (editData.hasOwnProperty(key)) {
@@ -298,7 +299,6 @@ export default defineComponent({
             }
           })
         } else {
-          // 创建模式：完全重置，确保页面和数据都干净
           originalEditData.value = null
           resetForm()
         }
@@ -306,18 +306,15 @@ export default defineComponent({
     }, { immediate: true })
 
     const handleClose = () => {
-      // 关闭时重置表单数据
       resetForm()
       emit('close')
     }
-    // 修改：提交时校验
+
     const handleSubmit = () => {
       (formRef.value as any)?.validate((errors: any) => {
         if (!errors) {
           if (isEditMode.value && originalEditData.value) {
-            // 编辑模式：使用原始数据（包含id等字段）进行提交
             const submitData = JSON.parse(JSON.stringify(originalEditData.value))
-            // 用当前表单数据更新原始数据
             const initialState = getInitialFormState()
             Object.keys(initialState).forEach(key => {
               if (form.hasOwnProperty(key)) {
@@ -326,20 +323,17 @@ export default defineComponent({
             })
             emit('submit', submitData)
           } else {
-            // 创建模式：使用表单数据
             emit('submit', JSON.parse(JSON.stringify(form)))
           }
         }
       })
     }
-    // 测试按钮也校验
+
     const handleTest = () => {
       (formRef.value as any)?.validate((errors: any) => {
         if (!errors) {
           if (isEditMode.value && originalEditData.value) {
-            // 编辑模式：使用原始数据（包含id等字段）进行测试
             const testData = JSON.parse(JSON.stringify(originalEditData.value))
-            // 用当前表单数据更新原始数据
             const initialState = getInitialFormState()
             Object.keys(initialState).forEach(key => {
               if (form.hasOwnProperty(key)) {
@@ -348,7 +342,6 @@ export default defineComponent({
             })
             emit('test', testData)
           } else {
-            // 创建模式：使用表单数据
             emit('test', JSON.parse(JSON.stringify(form)))
           }
         }
@@ -382,27 +375,6 @@ export default defineComponent({
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.service_address')} path="serviceAddress" required>
               <NInput v-model={[form.serviceAddress, 'value']} placeholder={t('thirdparty_api_source.service_address_tips')} />
-            </NFormItem>
-            <NFormItem label={t('thirdparty_api_source.field_mapping')} labelAlign="left">
-              <NDynamicInput
-                v-model={[form.fieldMappings, 'value']}
-                onCreate={() => ({ externalField: '', internalField: '' })}
-              >
-                {{
-                  default: ({ value }: { value: { externalField: string; internalField: string } }) => (
-                    <NSpace>
-                      <NInput
-                        v-model={[value.internalField, 'value']}
-                        placeholder={t('thirdparty_api_source.internal_field')}
-                      />
-                      <NInput
-                        v-model={[value.externalField, 'value']}
-                        placeholder={t('thirdparty_api_source.external_field')}
-                      />
-                    </NSpace>
-                  )
-                }}
-              </NDynamicInput>
             </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.auth_type')} path="authConfig.authType" required>
@@ -462,15 +434,15 @@ export default defineComponent({
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.selectInterface.parameters, 'value']}
-                onCreate={() => ({ paramName: '', paramValue: null, location: 'HEADER' })}
+                onCreate={() => ({ paramName: '', paramValue: '', location: 'HEADER' })}
                 style={{ width: '100%' }}
               >
                 {{
-                  default: ({ value }: { value: { paramName: string; paramValue: any; location: string } }) => (
-                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                  default: ({ value }: { value: { paramName: string; paramValue: string; location: string } }) => (
+                    <NSpace style={{ width: '100%', flexWrap: 'nowrap' }}>
                       <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.selectInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} class={styles['param-location']} />
                       <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} class={styles['param-name']} />
-                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} class={styles['param-value']} />
+                      <NInput v-model={[value.paramValue, 'value']} placeholder={t('thirdparty_api_source.param_value_tips')} class={styles['param-value']} />
                     </NSpace>
                   )
                 }}
@@ -487,6 +459,32 @@ export default defineComponent({
                 />
               </NFormItem>
             )}
+            <NFormItem label={t('thirdparty_api_source.extract_response_data')}>
+              <NDynamicInput
+                v-model={[form.selectInterface.responseParameters, 'value']}
+                onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
+                style={{ width: '100%' }}
+              >
+                {{
+                  default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
+                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                      <NInput
+                        v-model={[value.key, 'value']}
+                        placeholder={t('thirdparty_api_source.extract_field')}
+                        class={styles['extract-key']}
+                        disabled={value.disabled}
+                      />
+                      <NInput
+                        v-model={[value.jsonPath, 'value']}
+                        placeholder={t('thirdparty_api_source.json_path_list')}
+                        class={styles['extract-path']}
+                        disabled={value.disabled}
+                      />
+                    </NSpace>
+                  )
+                }}
+              </NDynamicInput>
+            </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.submit_interface')} path="submitInterface.url" required>
               <NInput v-model={[form.submitInterface.url, 'value']} placeholder={t('thirdparty_api_source.submit_interface_tips')} class={styles['submit-url']} onChange={() => formRef.value?.validate?.()} />
@@ -495,15 +493,15 @@ export default defineComponent({
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.submitInterface.parameters, 'value']}
-                onCreate={() => ({ paramName: '', paramValue: null, location: 'HEADER' })}
+                onCreate={() => ({ paramName: '', paramValue: '', location: 'HEADER' })}
                 style={{ width: '100%' }}
               >
                 {{
-                  default: ({ value }: { value: { paramName: string; paramValue: any; location: string } }) => (
-                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                  default: ({ value }: { value: { paramName: string; paramValue: string; location: string } }) => (
+                    <NSpace style={{ width: '100%', flexWrap: 'nowrap' }}>
                       <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.submitInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} class={styles['param-location']} />
                       <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} class={styles['param-name']} />
-                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} class={styles['param-value']} />
+                      <NInput v-model={[value.paramValue, 'value']} placeholder={t('thirdparty_api_source.param_value_tips')} class={styles['param-value']} />
                     </NSpace>
                   )
                 }}
@@ -520,6 +518,32 @@ export default defineComponent({
                 />
               </NFormItem>
             )}
+            <NFormItem label={t('thirdparty_api_source.extract_response_data')}>
+              <NDynamicInput
+                v-model={[form.submitInterface.responseParameters, 'value']}
+                onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
+                style={{ width: '100%' }}
+              >
+                {{
+                  default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
+                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                      <NInput
+                        v-model={[value.key, 'value']}
+                        placeholder={t('thirdparty_api_source.extract_field')}
+ class={styles['extract-key']}
+                        disabled={value.disabled}
+                      />
+                      <NInput
+                        v-model={[value.jsonPath, 'value']}
+                        placeholder={t('thirdparty_api_source.json_path')}
+                        class={styles['extract-path']}
+                        disabled={value.disabled}
+                      />
+                    </NSpace>
+                  )
+                }}
+              </NDynamicInput>
+            </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.query_interface')} path="pollStatusInterface.url" required>
               <NInput v-model={[form.pollStatusInterface.url, 'value']} placeholder={t('thirdparty_api_source.query_interface_tips')} onChange={() => formRef.value?.validate?.()} />
@@ -528,15 +552,15 @@ export default defineComponent({
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.pollStatusInterface.parameters, 'value']}
-                onCreate={() => ({ paramName: '', paramValue: null, location: 'HEADER', systemField: '' })}
+                onCreate={() => ({ paramName: '', paramValue: '', location: 'HEADER' })}
                 style={{ width: '100%' }}
               >
                 {{
-                  default: ({ value }: { value: { paramName: string; paramValue: any; location: string; systemField: string } }) => (
-                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                  default: ({ value }: { value: { paramName: string; paramValue: string; location: string } }) => (
+                    <NSpace style={{ width: '100%', flexWrap: 'nowrap' }}>
                       <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.pollStatusInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} class={styles['param-location']} />
                       <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} class={styles['param-name']} />
-                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} class={styles['param-value']} />
+                      <NInput v-model={[value.paramValue, 'value']} placeholder={t('thirdparty_api_source.param_value_tips')} class={styles['param-value']} />
                     </NSpace>
                   )
                 }}
@@ -569,15 +593,15 @@ export default defineComponent({
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.stopInterface.parameters, 'value']}
-                onCreate={() => ({ paramName: '', paramValue: null, location: 'HEADER' })}
+                onCreate={() => ({ paramName: '', paramValue: '', location: 'HEADER' })}
                 style={{ width: '100%' }}
               >
                 {{
-                  default: ({ value }: { value: { paramName: string; paramValue: any; location: string } }) => (
-                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                  default: ({ value }: { value: { paramName: string; paramValue: string; location: string } }) => (
+                    <NSpace style={{ width: '100%', flexWrap: 'nowrap' }}>
                       <NSelect v-model={[value.location, 'value']} options={getLocationOptions(form.stopInterface.method)} placeholder={t('thirdparty_api_source.param_location_tips')} class={styles['param-location']} />
                       <NInput v-model={[value.paramName, 'value']} placeholder={t('thirdparty_api_source.param_name_tips')} class={styles['param-name']} />
-                      <NSelect v-model={[value.paramValue, 'value']} options={systemFieldOptions.value} placeholder={t('thirdparty_api_source.system_field_tips')} class={styles['param-value']} />
+                      <NInput v-model={[value.paramValue, 'value']} placeholder={t('thirdparty_api_source.param_value_tips')} class={styles['param-value']} />
                     </NSpace>
                   )
                 }}
