@@ -42,12 +42,14 @@ import java.util.concurrent.TimeUnit;
 import lombok.extern.slf4j.Slf4j;
 
 import com.jayway.jsonpath.JsonPath;
+import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;
 
 @Slf4j
 public class ExternalSystemTask extends AbstractTask {
 
     private static final String EXTERNAL_TASK_ID = "id";
     private static final String EXTERNAL_TASK_NAME = "name";
+    private static final String EXTERNAL_TASKINSTANCE_ID = "taskInstanceId";
     private Boolean traceEnabled = true;
 
     private ExternalSystemParameters externalSystemParameters;
@@ -122,15 +124,15 @@ public class ExternalSystemTask extends AbstractTask {
 
             OkHttpResponse response = executeRequest(submitConfig.getMethod(), url, headers, requestParams, requestBody,
                     120000, 120000, 120000);
-
+            log.info("Submit task response:{}", response);
             if (response.getStatusCode() != 200) {
                 throw new TaskException("Submit task failed: " + response.getBody());
             }
 
-            parseSubmitResponse(submitConfig.getResponseParameters(),response.getBody());
+            parseSubmitResponse(submitConfig.getResponseParameters(), response.getBody());
             log.info("Task submitted successfully, external task instance id: {}", externalTaskInstanceId);
         } catch (Exception e) {
-            log.error("Submit task failed", e);
+            log.error("Submit task failed:{}", e);
             throw new TaskException("Submit task failed", e);
         }
     }
@@ -175,6 +177,7 @@ public class ExternalSystemTask extends AbstractTask {
 
             OkHttpResponse response = executeRequest(pollConfig.getMethod(), url, headers, requestParams, requestBody,
                     30000, 30000, 30000);
+            log.info("poll task status response:{}", response);
 
             if (response.getStatusCode() != 200) {
                 throw new TaskException("polling task failed: " + response.getBody());
@@ -204,6 +207,7 @@ public class ExternalSystemTask extends AbstractTask {
 
             OkHttpResponse response = executeRequest(stopConfig.getMethod(), url, headers, requestParams, requestBody,
                     30000, 30000, 30000);
+            log.info("cancel task response:{}", response);
 
             if (response.getStatusCode() != 200) {
                 throw new TaskException("Cancel task failed: " + response.getBody());
@@ -259,6 +263,7 @@ public class ExternalSystemTask extends AbstractTask {
     private void buildAuthHeader(String accessToken, Map<String, String> headers) {
         headers.put("Authorization", accessToken);
     }
+
     private Map<String, String> buildHeaders(BaseExternalSystemParams.InterfaceConfig config) {
         Map<String, String> requestParams = new HashMap<>();
         for (BaseExternalSystemParams.RequestParameter param : config.getParameters()) {
@@ -268,6 +273,7 @@ public class ExternalSystemTask extends AbstractTask {
         }
         return requestParams;
     }
+
     private Map<String, Object> buildRequestBody(BaseExternalSystemParams.InterfaceConfig config) {
         Map<String, Object> requestBody = new HashMap<>();
         if (config.getBody() != null) {
@@ -299,8 +305,9 @@ public class ExternalSystemTask extends AbstractTask {
                 result.replace(index, index + placeholder.length(), entry.getValue());
             }
         }
-
-        return result.toString();
+        String resultString = ParameterUtils.convertParameterPlaceholders(result.toString(), parameterMap);
+        log.info("after replaceParameterPlaceholders:{}", resultString);
+        return resultString;
     }
 
     private void parseSubmitResponse(List<BaseExternalSystemParams.ResponseParameter> responseParameters, String responseBody) throws TaskException {
@@ -315,12 +322,12 @@ public class ExternalSystemTask extends AbstractTask {
                     continue;
                 }
 
-//                if (EXTERNAL_TASK_ID.equals(key)) {
-//                    externalTaskInstanceId = value.toString().replace("\"", "");
-//                    log.info("Parsed external task instance id: {}", externalTaskInstanceId);
-//                }
-                    parameterMap.put(key, value.toString().replace("\"", ""));
-                    log.info("Parsed parameter {}: {}", key, value.toString());
+                if (EXTERNAL_TASKINSTANCE_ID.equals(key)) {
+                    externalTaskInstanceId = value.toString().replace("\"", "");
+                    log.info("Parsed external task instance id: {}", externalTaskInstanceId);
+                }
+                parameterMap.put(key, value.toString().replace("\"", ""));
+                log.info("Parsed parameter {}: {}", key, value.toString());
 
             }
         } catch (Exception e) {
@@ -328,6 +335,7 @@ public class ExternalSystemTask extends AbstractTask {
             throw new TaskException("Parse submit response failed", e);
         }
     }
+
     @Override
     public AbstractParameters getParameters() {
         return this.externalSystemParameters;
