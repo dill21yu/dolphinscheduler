@@ -27,12 +27,8 @@ RUN apt update ; \
 
 WORKDIR $DOLPHINSCHEDULER_HOME
 
-COPY ./target/apache-dolphinscheduler-*-bin.tar.gz $DOLPHINSCHEDULER_HOME
-RUN tar -zxvf apache-dolphinscheduler-*-bin.tar.gz ; \
-    rm -rf apache-dolphinscheduler-*-bin.tar.gz ; \
-    mkdir -p ./alert-server && mv apache-dolphinscheduler-*-bin/alert-server/* ./alert-server/ ; \
-    mkdir -p ./plugins && mv apache-dolphinscheduler-*-bin/plugins/* ./plugins/ ; \
-    rm -rf apache-dolphinscheduler-*-bin
+ADD ./target/apache-dolphinscheduler-*-bin/alert-server $DOLPHINSCHEDULER_HOME/alert-server
+ADD ./target/apache-dolphinscheduler-*-bin/plugins/alert-plugins $DOLPHINSCHEDULER_HOME/plugins/alert-plugins
 
 EXPOSE 50052 50053
 
