@@ -16,8 +16,11 @@ pipeline {
 		gitLabConnection('gitlab')
 	}
 	parameters {
-        choice(name: 'buildx', choices: ['linux/amd64', 'linux/arm64', 'linux/arm64,linux/amd64'], description: 'processor architecture')
+        choice(name: 'buildPlatform', choices: ['linux/amd64', 'linux/arm64', 'linux/arm64,linux/amd64'], description: 'processor architecture')
+        booleanParam(name: 'isBuildImage', defaultValue: false, description: 'Build Docker image?')
+        booleanParam(name: 'isPushNexus', defaultValue: true, description: 'Push Tar to the Nexus server?')
     }
+
     environment {
         // 权限验证
         IMAGE_CREDENTIALS = "credential-harbor"
@@ -86,10 +89,12 @@ pipeline {
         }
 
         // build images
-        stage('Build-Image') {
+        stage('Build and Push Image') {
+            when {
+                expression { params.isBuildImage }
+            }
             steps {
                 script {
-
                     def images = ["dolphinscheduler-alert", "dolphinscheduler-master", "dolphinscheduler-worker", "dolphinscheduler-api", "dolphinscheduler-tools"]
                     images.each { image ->
                         echo "image is ${image}"
@@ -112,7 +117,7 @@ pipeline {
                                         IMAGE_CREDENTIALS, // credentials for pushing
                                 )
                             }
-                            builder.buildxAndPush(params.buildx)
+                            builder.buildxAndPush(params.buildPlatform)
                         }
                     }
                 }
@@ -120,37 +125,41 @@ pipeline {
         }
 
 
-        // rename tar.gz
-        stage('Rename tar.gz') {
-            steps {
-              container('tools') {
-                script {
 
-                    sh """
-                        cd $WORKSPACE/dolphinscheduler-dist/target
-                        ls -l apache-dolphinscheduler-*-bin.tar.gz
-                        rm -rf apache-dolphinscheduler-*-bin.tar.gz
-                        mv apache-dolphinscheduler-dev-SNAPSHOT-bin dolphinscheduler-3.3.0_ccdp_1.0.0
-                        tar -zcf dolphinscheduler-3.3.0_ccdp_1.0.0.tar.gz dolphinscheduler-3.3.0_ccdp_1.0.0
-                        ls -l dolphinscheduler-*.tar.gz
-                    """
-                  }
+        // rename tar.gz
+        stage('Rename and Push tar.gz') {
+            when {
+                expression { params.isPushNexus }
+            }
+            steps {
+                container('tools') {
+                    script {
+                        sh """
+                            cd $WORKSPACE/dolphinscheduler-dist/target
+                            ls -l apache-dolphinscheduler-*-bin.tar.gz
+                            rm -rf apache-dolphinscheduler-*-bin.tar.gz
+                            mv apache-dolphinscheduler-dev-SNAPSHOT-bin dolphinscheduler-3.3.0-1.0.0
+                            tar -zcf dolphinscheduler-3.3.0-1.0.0.tar.gz dolphinscheduler-3.3.0-1.0.0
+                            ls -l dolphinscheduler-*.tar.gz
+                        """
+                    }
+                    withCredentials([usernamePassword(credentialsId: 'credential-nexus', passwordVariable: 'password', usernameVariable: 'user2')]) {
+                        sh """
+                            ls -l $WORKSPACE/dolphinscheduler-dist/target/dolphinscheduler-*.tar.gz
+                            curl -v  -u sys_deployer:$password --upload-file $WORKSPACE/dolphinscheduler-dist/target/dolphinscheduler-3.3.0-1.0.0.tar.gz https://devops.ctcdn.cn/nexus/repository/raw-repo/bigdata-emr-release/emr-ccdp-release-generic/emr-ccdp-tar-release/
+                        """
+                    }
                 }
             }
         }
 
 
-        // upload tar to nexus repository
-        stage('Deploy') {
+        // upload helm chart to nexus repository
+        stage('Upload helm chart') {
             steps {
                 script {
                     container('tools') {
                         withCredentials([usernamePassword(credentialsId: 'credential-nexus', passwordVariable: 'password', usernameVariable: 'user2')]) {
-                             sh """
-                                ls -l $WORKSPACE/dolphinscheduler-dist/target/dolphinscheduler-*.tar.gz
-                                curl -v  -u sys_deployer:$password --upload-file $WORKSPACE/dolphinscheduler-dist/target/dolphinscheduler-3.3.0_ccdp_1.0.0.tar.gz https://devops.ctcdn.cn/nexus/repository/raw-repo/bigdata-emr-dev/emr-ccdp-dev-generic/emr-ccdp-tar-dev/
-                             """
-
                              sh """
                                 find . -type f -name "dolphinscheduler-*.tgz" | xargs rm -f
                                 helm package $WORKSPACE/deploy/kubernetes/dolphinscheduler/

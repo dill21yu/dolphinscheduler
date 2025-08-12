@@ -122,6 +122,7 @@
         <jasypt-spring-boot-starter.version>3.0.5</jasypt-spring-boot-starter.version>
         <commons-net.version>3.9.0</commons-net.version>
         <jakarta-servlet-api.version>4.0.4</jakarta-servlet-api.version>
+        <junit-jupiter-params.version>5.8.2</junit-jupiter-params.version>
     </properties>
 
     <dependencyManagement>
@@ -962,6 +963,13 @@
                 <groupId>commons-net</groupId>
                 <artifactId>commons-net</artifactId>
                 <version>${commons-net.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit-jupiter-params.version}</version>
+                <scope>test</scope>
             </dependency>
 
         </dependencies>
