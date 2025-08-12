@@ -17,10 +17,10 @@
 
 package org.apache.dolphinscheduler.common.config;
 
+import org.apache.dolphinscheduler.common.utils.Base64Utils;
 import org.apache.dolphinscheduler.common.utils.PropertyUtils;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.net.util.Base64;
 
 import java.io.IOException;
 import java.util.HashMap;
@@ -62,7 +62,7 @@ public class ActuatorFilterRegistrationBean extends FilterRegistrationBean<Filte
         if (enable) {
             setFilter(new ActuatorFilter());
 
-            Map<String, String> initParams = new HashMap<>(4);
+            Map<String, String> initParams = new HashMap<>();
             initParams.put("enable", Boolean.toString(true));
             initParams.put("username", this.username);
             initParams.put("password", this.password);
@@ -74,9 +74,9 @@ public class ActuatorFilterRegistrationBean extends FilterRegistrationBean<Filte
 
     static class ActuatorFilter implements Filter {
 
-        private final static String ACTUATOR_PATH_PATTERN_1 = "/dolphinscheduler/actuator/";
-        private final static String ACTUATOR_PATH_PATTERN_2 = "/actuator/";
-        private final static String HEADER_ACTUATOR_AUTH = "Authorization";
+        private static final String ACTUATOR_PATH_PATTERN_1 = "/dolphinscheduler/actuator/";
+        private static final String ACTUATOR_PATH_PATTERN_2 = "/actuator/";
+        private static final String HEADER_ACTUATOR_AUTH = "Authorization";
 
         private boolean enable;
         private String username;
@@ -127,7 +127,7 @@ public class ActuatorFilterRegistrationBean extends FilterRegistrationBean<Filte
                                 "Actuator interface authentication failed, the Authorization header cannot be empty");
                     }
                     // Generate the correct Authorization header value
-                    String authReal = getBaseAuth(this.username, this.password);
+                    String authReal = Base64Utils.getBaseAuth(this.username, this.password);
                     // Compare the Authorization header value from the request with the correct value
                     if (authReal.equalsIgnoreCase(authRequest)) {
                         // If they match, allow the request to pass through
@@ -151,24 +151,6 @@ public class ActuatorFilterRegistrationBean extends FilterRegistrationBean<Filte
         @Override
         public void destroy() {
             log.info("ActuatorFilter destroy");
-        }
-
-        /**
-         * Generates the HTTP Basic Authentication header value.
-         * This method combines the username and password into a Base64 encoded string, which is used in the Authorization header of HTTP requests.
-         *
-         * @param userName The username for authentication.
-         * @param password The password, used in conjunction with the username for authentication.
-         * @return The Authorization header value formatted as "Basic " followed by the Base64 encoded username and password.
-         */
-        private String getBaseAuth(String userName, String password) {
-            // Concatenate the username and password into a single string, separated by a colon
-            String auth = userName + ":" + password;
-            // Convert the concatenated string to a byte array and encode it using Base64, generating a URL-safe string
-            String base64Auth = Base64.encodeBase64URLSafeString(auth.getBytes());
-            // Concatenate the "Basic " prefix with the Base64 encoded string to form the final Authorization header
-            // value
-            return "Basic " + base64Auth;
         }
 
     }
