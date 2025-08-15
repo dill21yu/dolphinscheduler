@@ -123,5 +123,12 @@ export default {
   query_interface_url_required: '查询接口地址为必填项',
   stop_interface_url_required: '停止接口地址为必填项',
   success_condition_required: '成功条件字段和值不能为空',
-  failure_condition_required: '失败条件字段和值不能为空'
+  failure_condition_required: '失败条件字段和值不能为空',
+
+  external_system_required: '第三方系统不能为空',
+  external_system_task_required: '第三方系统任务不能为空',
+  id_jsonpath_required: '字段id以及JSONPath为必填项',
+  name_jsonpath_required: '字段name以及JSONPath为必填项',
+  taskinstanceid_jsonpath_required: '字段taskInstanceId以及JSONPath为必填项'
+
 } 

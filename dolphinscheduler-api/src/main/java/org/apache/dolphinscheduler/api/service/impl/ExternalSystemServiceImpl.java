@@ -108,14 +108,20 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
 
     private void checkExternalSystemParam(BaseExternalSystemParams externalSystemParam) {
         // 检查系统名称
-        if (externalSystemParam.getSystemName() == null || externalSystemParam.getSystemName().isEmpty()) {
+        if (externalSystemParam.getSystemName() == null || externalSystemParam.getSystemName().trim().isEmpty()) {
             throw new ServiceException(Status.EXTERNAL_SYSTEM_NAME_EMPTY);
         }
+        String systemName = externalSystemParam.getSystemName().trim();
+        if (systemName.length() > 64) {
+            throw new ServiceException(Status.EXTERNAL_SYSTEM_NAME_TOO_LONG);
+        }
+        externalSystemParam.setSystemName(systemName);
 
         // 检查服务地址
-        if (externalSystemParam.getServiceAddress() == null || externalSystemParam.getServiceAddress().isEmpty()) {
+        if (externalSystemParam.getServiceAddress() == null || externalSystemParam.getServiceAddress().trim().isEmpty()) {
             throw new ServiceException(Status.EXTERNAL_SYSTEM_SERVICE_ADDRESS_EMPTY);
         }
+        externalSystemParam.setServiceAddress(externalSystemParam.getServiceAddress().trim());
 
         // 检查认证配置
         BaseExternalSystemParams.AuthConfig authConfig = externalSystemParam.getAuthConfig();
@@ -129,38 +135,47 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         // 根据认证类型进行具体校验
         switch (authConfig.getAuthType()) {
             case BASIC_AUTH:
-                if (authConfig.getBasicUsername() == null || authConfig.getBasicUsername().isEmpty()) {
+                if (authConfig.getBasicUsername() == null || authConfig.getBasicUsername().trim().isEmpty()) {
                     throw new ServiceException(Status.EXTERNAL_SYSTEM_BASIC_USERNAME_EMPTY);
                 }
-                if (authConfig.getBasicPassword() == null || authConfig.getBasicPassword().isEmpty()) {
+                authConfig.setBasicUsername(authConfig.getBasicUsername().trim());
+                if (authConfig.getBasicPassword() == null || authConfig.getBasicPassword().trim().isEmpty()) {
                     throw new ServiceException(Status.EXTERNAL_SYSTEM_BASIC_PASSWORD_EMPTY);
                 }
+                authConfig.setBasicPassword(authConfig.getBasicPassword().trim());
                 break;
             case JWT:
-                if (authConfig.getJwtToken() == null || authConfig.getJwtToken().isEmpty()) {
+                if (authConfig.getJwtToken() == null || authConfig.getJwtToken().trim().isEmpty()) {
                     throw new ServiceException(Status.EXTERNAL_SYSTEM_JWT_TOKEN_EMPTY);
                 }
+                authConfig.setJwtToken(authConfig.getJwtToken().trim());
                 break;
             case OAUTH2:
-                if (authConfig.getOauth2TokenUrl() == null || authConfig.getOauth2TokenUrl().isEmpty()) {
+                if (authConfig.getOauth2TokenUrl() == null || authConfig.getOauth2TokenUrl().trim().isEmpty()) {
                     throw new ServiceException(Status.EXTERNAL_SYSTEM_OAUTH2_TOKEN_URL_EMPTY);
                 }
-                if (authConfig.getOauth2ClientId() == null || authConfig.getOauth2ClientId().isEmpty()) {
+                authConfig.setOauth2TokenUrl(authConfig.getOauth2TokenUrl().trim());
+                if (authConfig.getOauth2ClientId() == null || authConfig.getOauth2ClientId().trim().isEmpty()) {
                     throw new ServiceException(Status.EXTERNAL_SYSTEM_OAUTH2_CLIENT_ID_EMPTY);
                 }
-                if (authConfig.getOauth2ClientSecret() == null || authConfig.getOauth2ClientSecret().isEmpty()) {
+                authConfig.setOauth2ClientId(authConfig.getOauth2ClientId().trim());
+                if (authConfig.getOauth2ClientSecret() == null || authConfig.getOauth2ClientSecret().trim().isEmpty()) {
                     throw new ServiceException(Status.EXTERNAL_SYSTEM_OAUTH2_CLIENT_SECRET_EMPTY);
                 }
-                if (authConfig.getOauth2GrantType() == null || authConfig.getOauth2GrantType().isEmpty()) {
+                authConfig.setOauth2ClientSecret(authConfig.getOauth2ClientSecret().trim());
+                if (authConfig.getOauth2GrantType() == null || authConfig.getOauth2GrantType().trim().isEmpty()) {
                     throw new ServiceException(Status.EXTERNAL_SYSTEM_OAUTH2_GRANT_TYPE_EMPTY);
                 }
+                authConfig.setOauth2GrantType(authConfig.getOauth2GrantType().trim());
                 if (authConfig.getOauth2GrantType().equals("password")) {
-                    if (authConfig.getOauth2Username() == null || authConfig.getOauth2Username().isEmpty()) {
+                    if (authConfig.getOauth2Username() == null || authConfig.getOauth2Username().trim().isEmpty()) {
                         throw new ServiceException(Status.EXTERNAL_SYSTEM_OAUTH2_USERNAME_EMPTY);
                     }
-                    if (authConfig.getOauth2Password() == null || authConfig.getOauth2Password().isEmpty()) {
+                    authConfig.setOauth2Username(authConfig.getOauth2Username().trim());
+                    if (authConfig.getOauth2Password() == null || authConfig.getOauth2Password().trim().isEmpty()) {
                         throw new ServiceException(Status.EXTERNAL_SYSTEM_OAUTH2_PASSWORD_EMPTY);
                     }
+                    authConfig.setOauth2Password(authConfig.getOauth2Password().trim());
                 }
                 break;
             default:
@@ -189,9 +204,10 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     }
 
     private void checkInterfaceConfig(BaseExternalSystemParams.InterfaceConfig interfaceConfig) {
-        if (interfaceConfig.getUrl() == null || interfaceConfig.getUrl().isEmpty()) {
+        if (interfaceConfig.getUrl() == null || interfaceConfig.getUrl().trim().isEmpty()) {
             throw new ServiceException(Status.EXTERNAL_SYSTEM_INTERFACE_URL_EMPTY);
         }
+        interfaceConfig.setUrl(interfaceConfig.getUrl().trim());
         if (interfaceConfig.getMethod() == null) {
             throw new ServiceException(Status.EXTERNAL_SYSTEM_INTERFACE_METHOD_EMPTY);
         }
@@ -253,6 +269,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         externalSystemMapper.updateById(existingSystem);
         return existingSystem;
     }
+
     private boolean checkName(String name) {
         List<ExternalSystem> systemByName = externalSystemMapper.queryBySystemName(name.trim());
         return systemByName != null && !systemByName.isEmpty();
@@ -281,20 +298,17 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     }
 
     @Override
-    public boolean testExternalSystemConnection(User loginUser, BaseExternalSystemParams baseExternalSystemParam) {
-        try {
+    public boolean testExternalSystemConnection(BaseExternalSystemParams baseExternalSystemParam) {
             OkHttpResponse response = callSelectInterface(baseExternalSystemParam, false);
             if (response.getStatusCode() == 200) {
                 return true;
+            }else{
+                log.error("select interface failed,response: " + response);
+                throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_AUTH_FAILED);
             }
-        } catch (Exception e) {
-            log.error("connect error,e:{}", e.getMessage());
-        }
-        throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_FAILED);
     }
 
     private OkHttpResponse callSelectInterface(BaseExternalSystemParams baseExternalSystemParam, boolean dbPassword) {
-        try {
             if (baseExternalSystemParam == null || baseExternalSystemParam.getSelectInterface() == null) {
                 throw new IllegalArgumentException("BaseExternalSystemParams or SelectInterface cannot be null");
             }
@@ -312,6 +326,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
             Map<String, Object> requestParams = new HashMap<>();
             String token;
 
+            try{
             if (dbPassword) {
                 // 已保存信息，从数据库中获取，并解密
                 BaseExternalSystemParams.AuthConfig authConfig = baseExternalSystemParam.getAuthConfig();
@@ -353,9 +368,13 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
                     // 新建信息测试连接
                     token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
                 }
+            }}catch(Exception e) {
+                log.error("Authentication failed: {}", e.getMessage());
+                throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_AUTH_FAILED);
             }
 
-            headeMap.put("Authorization",
+                try{
+                headeMap.put("Authorization",
                     baseExternalSystemParam.getTokenPrefix(baseExternalSystemParam.getAuthConfig().getAuthType())
                             + token);
 
@@ -396,7 +415,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         } catch (Exception e) {
             log.error("select task failed, baseExternalSystemParam: {}, dbPassword: {}", baseExternalSystemParam,
                     dbPassword, e);
-            throw new TaskException("select task failed", e);
+            throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_AUTH_FAILED);
         }
     }
 
@@ -422,14 +441,14 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         IPage<ExternalSystem> externalSystemList;
         PageInfo<ExternalSystem> pageInfo = new PageInfo<>(pageNo, pageSize);
         if (loginUser.getUserType().equals(UserType.ADMIN_USER)) {
-            externalSystemList = externalSystemMapper.selectPaging(page, searchVal, 0);
+            externalSystemList = externalSystemMapper.selectPaging(page, searchVal.trim(), 0);
         } else {
             Set<Integer> ids = resourcePermissionCheckService
                     .userOwnedResourceIdsAcquisition(AuthorizationType.EXTERNALSYSTEM, loginUser.getId(), log);
             if (ids.isEmpty()) {
                 return pageInfo;
             }
-            externalSystemList = externalSystemMapper.selectPaging(page, searchVal, loginUser.getId());
+            externalSystemList = externalSystemMapper.selectPaging(page, searchVal.trim(), loginUser.getId());
         }
 
         List<ExternalSystem> externalSystems =

@@ -27,6 +27,7 @@ import org.apache.dolphinscheduler.plugin.task.api.TaskCallBack;
 import org.apache.dolphinscheduler.plugin.task.api.TaskConstants;
 import org.apache.dolphinscheduler.plugin.task.api.TaskException;
 import org.apache.dolphinscheduler.plugin.task.api.TaskExecutionContext;
+import org.apache.dolphinscheduler.plugin.task.api.enums.TaskTimeoutStrategy;
 import org.apache.dolphinscheduler.plugin.task.api.model.Property;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.AbstractParameters;
 import org.apache.dolphinscheduler.plugin.task.api.utils.ParameterUtils;
@@ -61,6 +62,9 @@ public class ExternalSystemTask extends AbstractTask {
     private Set<String> successStatusCache = new HashSet<>();
     private Set<String> failureStatusCache = new HashSet<>();
 
+    private boolean isTimeout = false;
+    private long taskStartTime;
+
     public ExternalSystemTask(TaskExecutionContext taskExecutionContext) {
         super(taskExecutionContext);
         this.taskExecutionContext = taskExecutionContext;
@@ -92,6 +96,7 @@ public class ExternalSystemTask extends AbstractTask {
     @Override
     public void handle(TaskCallBack taskCallBack) throws TaskException {
         try {
+            taskStartTime = System.currentTimeMillis();
             submitExternalTask();
             TimeUnit.SECONDS.sleep(10);
             trackExternalTaskStatus();
@@ -104,12 +109,31 @@ public class ExternalSystemTask extends AbstractTask {
 
     @Override
     public void cancel() throws TaskException {
+        if (isTimeoutFailureEnabled()) {
+            long currentTime = System.currentTimeMillis();
+            long usedTime = (currentTime - taskStartTime) / 1000;
+            if (usedTime >= taskExecutionContext.getTaskTimeout()) {
+                isTimeout = true;
+                log.error("External task timeout, used time: {}s, timeout: {}s",
+                        usedTime, taskExecutionContext.getTaskTimeout());
+                setExitStatusCode(TaskConstants.EXIT_CODE_FAILURE);
+                cancelTaskInstance();
+                return;
+            }
+        }
         try {
             cancelTaskInstance();
         } catch (Exception e) {
             throw new TaskException("cancel external system task error", e);
         } finally {
-            setExitStatusCode(TaskConstants.EXIT_CODE_KILL);
+            // 只有在启用超时失败策略且确实是超时的情况下，才设置为失败状态
+            if (isTimeout && isTimeoutFailureEnabled()) {
+                setExitStatusCode(TaskConstants.EXIT_CODE_FAILURE);
+                log.info("External task cancelled due to timeout, set status to FAILED");
+            } else {
+                setExitStatusCode(TaskConstants.EXIT_CODE_KILL);
+                log.info("External task cancelled manually or timeout not enabled, set status to KILLED");
+            }
         }
     }
 
@@ -141,6 +165,20 @@ public class ExternalSystemTask extends AbstractTask {
         try {
             String status;
             do {
+                // 只有在启用超时失败策略时才检查超时
+                if (isTimeoutFailureEnabled()) {
+                    long currentTime = System.currentTimeMillis();
+                    long usedTime = (currentTime - taskStartTime) / 1000;
+                    if (usedTime >= taskExecutionContext.getTaskTimeout()) {
+                        isTimeout = true;
+                        log.error("External task timeout, used time: {}s, timeout: {}s",
+                                usedTime, taskExecutionContext.getTaskTimeout());
+                        setExitStatusCode(TaskConstants.EXIT_CODE_FAILURE);
+                        cancelTaskInstance();
+                        return;
+                    }
+                }
+
                 status = pollTaskStatus();
 
                 if (successStatusCache.contains(status)) {
@@ -389,6 +427,18 @@ public class ExternalSystemTask extends AbstractTask {
                 log.error("Error: failureStatus is null");
             }
         }
+    }
+
+    /**
+     * 检查是否启用了超时失败策略
+     */
+    private boolean isTimeoutFailureEnabled() {
+        return
+                taskExecutionContext.getTaskTimeoutStrategy() != null
+                        && taskExecutionContext.getTaskTimeout() > 0
+                        && taskExecutionContext.getTaskTimeout() < Integer.MAX_VALUE
+                        && (taskExecutionContext.getTaskTimeoutStrategy() == TaskTimeoutStrategy.FAILED
+                        || taskExecutionContext.getTaskTimeoutStrategy() == TaskTimeoutStrategy.WARNFAILED);
     }
 
 }

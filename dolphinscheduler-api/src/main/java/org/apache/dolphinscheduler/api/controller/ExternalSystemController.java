@@ -150,7 +150,7 @@ public class ExternalSystemController extends BaseController {
     public Result<Object> testExternalSystemConnection(@Parameter(hidden = true) @RequestAttribute(value = Constants.SESSION_USER) User loginUser,
                                                        @Parameter(name = "externalSystemParam", description = "EXTERNAL_SYSTEM_PARAM", required = true) @RequestBody String jsonStr) {
         BaseExternalSystemParams externalSystemParam = JSONUtils.parseObject(jsonStr, BaseExternalSystemParams.class);
-        boolean connectionResult = externalSystemService.testExternalSystemConnection(loginUser, externalSystemParam);
+        boolean connectionResult = externalSystemService.testExternalSystemConnection(externalSystemParam);
         return Result.success(connectionResult);
     }
 

@@ -45,7 +45,7 @@ public interface ExternalSystemService {
     /**
      * test external system connection
      */
-    boolean testExternalSystemConnection(User loginUser, BaseExternalSystemParams externalSystemParam);
+    boolean testExternalSystemConnection( BaseExternalSystemParams externalSystemParam);
 
     /**
      * query external system list with paging

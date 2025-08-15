@@ -122,5 +122,11 @@ export default {
   query_interface_url_required: 'Query interface address is required',
   stop_interface_url_required: 'Stop interface address is required',
   success_condition_required: 'Success condition field and value cannot be empty',
-  failure_condition_required: 'Failure condition field and value cannot be empty'
+  failure_condition_required: 'Failure condition field and value cannot be empty',
+
+  external_system_required: 'External system is required',
+  external_system_task_required: 'External system task is required',
+  id_jsonpath_required: 'ID field and JSONPath is required',
+  name_jsonpath_required: 'Name field and JSONPath is required',
+  taskinstanceid_jsonpath_required: 'TaskInstanceId field and JSONPath is required'
 } 
