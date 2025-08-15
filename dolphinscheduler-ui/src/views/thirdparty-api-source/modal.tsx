@@ -219,7 +219,37 @@ export default defineComponent({
           },
           trigger: ['blur', 'change']
         }
-      ]
+      ],
+       'selectInterface.responseParameters': [
+          {
+            validator: (rule: any, value: any) => {
+              const idField = value.find((item: any) => item.key === 'id')
+              const nameField = value.find((item: any) => item.key === 'name')
+
+              if (!idField || !idField.jsonPath) {
+                return new Error(t('thirdparty_api_source.id_jsonpath_required'))
+              }
+              if (!nameField || !nameField.jsonPath) {
+                return new Error(t('thirdparty_api_source.name_jsonpath_required'))
+              }
+              return true
+            },
+            trigger: ['blur', 'change']
+          }
+        ],
+        'submitInterface.responseParameters': [
+          {
+            validator: (rule: any, value: any) => {
+              const taskInstanceField = value.find((item: any) => item.key === 'taskInstanceId')
+
+              if (!taskInstanceField || !taskInstanceField.jsonPath) {
+                return new Error(t('thirdparty_api_source.taskinstanceid_jsonpath_required'))
+              }
+              return true
+            },
+            trigger: ['blur', 'change']
+          }
+        ]
     }
 
     const formRef = ref<FormInst | null>(null)
@@ -459,32 +489,32 @@ export default defineComponent({
                 />
               </NFormItem>
             )}
-            <NFormItem label={t('thirdparty_api_source.extract_response_data')}>
-              <NDynamicInput
-                v-model={[form.selectInterface.responseParameters, 'value']}
-                onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
-                style={{ width: '100%' }}
-              >
-                {{
-                  default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
-                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
-                      <NInput
-                        v-model={[value.key, 'value']}
-                        placeholder={t('thirdparty_api_source.extract_field')}
-                        class={styles['extract-key']}
-                        disabled={value.disabled}
-                      />
-                      <NInput
-                        v-model={[value.jsonPath, 'value']}
-                        placeholder={t('thirdparty_api_source.json_path_list')}
-                        class={styles['extract-path']}
-                        disabled={value.disabled}
-                      />
-                    </NSpace>
-                  )
-                }}
-              </NDynamicInput>
-            </NFormItem>
+               <NFormItem label={t('thirdparty_api_source.extract_response_data')} path="selectInterface.responseParameters" required>
+                  <NDynamicInput
+                    v-model={[form.selectInterface.responseParameters, 'value']}
+                    onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
+                    style={{ width: '100%' }}
+                  >
+                    {{
+                      default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
+                        <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                          <NInput
+                            v-model={[value.key, 'value']}
+                            placeholder={t('thirdparty_api_source.extract_field')}
+                            class={styles['extract-key']}
+                            disabled={value.disabled}
+                          />
+                          <NInput
+                            v-model={[value.jsonPath, 'value']}
+                            placeholder={t('thirdparty_api_source.json_path_list')}
+                            class={styles['extract-path']}
+                            disabled={value.disabled}
+                          />
+                        </NSpace>
+                      )
+                    }}
+                  </NDynamicInput>
+                </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.submit_interface')} path="submitInterface.url" required>
               <NInput v-model={[form.submitInterface.url, 'value']} placeholder={t('thirdparty_api_source.submit_interface_tips')} class={styles['submit-url']} onChange={() => formRef.value?.validate?.()} />
@@ -518,32 +548,32 @@ export default defineComponent({
                 />
               </NFormItem>
             )}
-            <NFormItem label={t('thirdparty_api_source.extract_response_data')}>
-              <NDynamicInput
-                v-model={[form.submitInterface.responseParameters, 'value']}
-                onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
-                style={{ width: '100%' }}
-              >
-                {{
-                  default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
-                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
-                      <NInput
-                        v-model={[value.key, 'value']}
-                        placeholder={t('thirdparty_api_source.extract_field')}
- class={styles['extract-key']}
-                        disabled={value.disabled}
-                      />
-                      <NInput
-                        v-model={[value.jsonPath, 'value']}
-                        placeholder={t('thirdparty_api_source.json_path')}
-                        class={styles['extract-path']}
-                        disabled={value.disabled}
-                      />
-                    </NSpace>
-                  )
-                }}
-              </NDynamicInput>
-            </NFormItem>
+                    <NFormItem label={t('thirdparty_api_source.extract_response_data')} path="submitInterface.responseParameters" required>
+                      <NDynamicInput
+                        v-model={[form.submitInterface.responseParameters, 'value']}
+                        onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
+                        style={{ width: '100%' }}
+                      >
+                        {{
+                          default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
+                            <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                              <NInput
+                                v-model={[value.key, 'value']}
+                                placeholder={t('thirdparty_api_source.extract_field')}
+                                class={styles['extract-key']}
+                                disabled={value.disabled}
+                              />
+                              <NInput
+                                v-model={[value.jsonPath, 'value']}
+                                placeholder={t('thirdparty_api_source.json_path')}
+                                class={styles['extract-path']}
+                                disabled={value.disabled}
+                              />
+                            </NSpace>
+                          )
+                        }}
+                      </NDynamicInput>
+                    </NFormItem>
             <NDivider />
             <NFormItem label={t('thirdparty_api_source.query_interface')} path="pollStatusInterface.url" required>
               <NInput v-model={[form.pollStatusInterface.url, 'value']} placeholder={t('thirdparty_api_source.query_interface_tips')} onChange={() => formRef.value?.validate?.()} />

@@ -49,7 +49,7 @@ export function useExternalSystem(
       const res = await queryExternalSystemTasks(externalSystemId)
       taskOptions.value = res.map((item: any) => ({
         label: item.name,
-        value: item.id // 确保 value 是字符串
+        value: String(item.id) // 确保 value 是字符串
       }))
     } catch (error) {
       console.error('Error fetching external system tasks:', error)
@@ -91,7 +91,12 @@ export function useExternalSystem(
       options: externalSystemOptions,
       validate: {
         trigger: ['input', 'blur'],
-        required: true
+        required: true,
+        validator(unuse: any, value) {
+          if (!value) {
+            return new Error(t('thirdparty_api_source.external_system_required'))
+          }
+        }
       }
     },
     {
@@ -104,8 +109,8 @@ export function useExternalSystem(
         trigger: ['input', 'blur'],
         required: true,
         validator(unuse: any, value) {
-          if (!value && value !== 0) {
-            return Error(t('project.node.external_system_tasks'))
+          if (!value) {
+            return new Error(t('thirdparty_api_source.external_system_task_required'))
           }
         }
       }
