@@ -122,6 +122,7 @@
         <jasypt-spring-boot-starter.version>3.0.5</jasypt-spring-boot-starter.version>
         <commons-net.version>3.9.0</commons-net.version>
         <jakarta-servlet-api.version>4.0.4</jakarta-servlet-api.version>
+        <junit-jupiter-params.version>5.8.2</junit-jupiter-params.version>
     </properties>
 
     <dependencyManagement>
@@ -563,6 +564,12 @@
                 </exclusions>
             </dependency>
             <dependency>
+                <groupId>org.apache.hive</groupId>
+                <artifactId>hive-exec</artifactId>
+                <version>${hive-exec.version}</version>
+            </dependency>
+
+            <dependency>
                 <groupId>org.apache.kyuubi</groupId>
                 <artifactId>kyuubi-hive-jdbc-shaded</artifactId>
                 <version>${kyuubi-jdbc.version}</version>
@@ -964,6 +971,13 @@
                 <version>${commons-net.version}</version>
             </dependency>
 
+            <dependency>
+                <groupId>org.junit.jupiter</groupId>
+                <artifactId>junit-jupiter-params</artifactId>
+                <version>${junit-jupiter-params.version}</version>
+                <scope>test</scope>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
@@ -1001,6 +1015,7 @@
                 <spring-boot.version>2.7.18</spring-boot.version>
                 <commons-beanutils.version>1.11.0</commons-beanutils.version>
                 <hive-jdbc.version>3.1.2</hive-jdbc.version>
+                <hive-exec.version>3.1.2</hive-exec.version>
                 <trino-jdbc.version>406</trino-jdbc.version>
                 <postgresql.version>42.4.4</postgresql.version>
             </properties>
@@ -1013,6 +1028,7 @@
                 <spring-boot.version>2.7.3</spring-boot.version>
                 <commons-beanutils.version>1.9.4</commons-beanutils.version>
                 <hive-jdbc.version>2.3.9</hive-jdbc.version>
+                <hive-exec.version>2.3.9</hive-exec.version>
                 <trino-jdbc.version>402</trino-jdbc.version>
                 <postgresql.version>42.4.1</postgresql.version>
             </properties>
