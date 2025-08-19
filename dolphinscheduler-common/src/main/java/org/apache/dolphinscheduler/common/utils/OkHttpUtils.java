@@ -110,10 +110,8 @@ public class OkHttpUtils {
         String finalUrl = addUrlParams(requestParamsMap, url);
         Request.Builder requestBuilder = new Request.Builder().url(finalUrl);
         addHeader(okHttpRequestHeaders.getHeaders(), requestBuilder);
-        Request request = new Request.Builder()
-                .url(finalUrl)
+        Request request = requestBuilder
                 .post(formBody) // 明确使用POST方法
-                .addHeader("Content-Type", okHttpRequestHeaders.getOkHttpRequestHeaderContentType().getValue())
                 .build();
         try (Response response = client.newCall(request).execute()) {
             return new OkHttpResponse(response.code(), getResponseBody(response));

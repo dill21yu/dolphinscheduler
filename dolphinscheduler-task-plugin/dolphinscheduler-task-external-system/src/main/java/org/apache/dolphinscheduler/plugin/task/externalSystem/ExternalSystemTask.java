@@ -42,21 +42,18 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.FormBody;
 
 import com.jayway.jsonpath.JsonPath;
 
 @Slf4j
 public class ExternalSystemTask extends AbstractTask {
 
-    private static final String EXTERNAL_TASK_ID = "id";
-    private static final String EXTERNAL_TASK_NAME = "name";
-    private static final String EXTERNAL_TASKINSTANCE_ID = "taskInstanceId";
     private Boolean traceEnabled = true;
 
     private ExternalSystemParameters externalSystemParameters;
     private BaseExternalSystemParams baseExternalSystemParams;
     private TaskExecutionContext taskExecutionContext;
-    private String externalTaskInstanceId;
     private String accessToken;
     private Map<String, String> parameterMap = new HashMap<>();
     private Set<String> successStatusCache = new HashSet<>();
@@ -72,8 +69,9 @@ public class ExternalSystemTask extends AbstractTask {
                 JSONUtils.parseObject(taskExecutionContext.getTaskParams(), ExternalSystemParameters.class);
         baseExternalSystemParams =
                 externalSystemParameters.generateExtendedContext(taskExecutionContext.getResourceParametersHelper());
-        accessToken = baseExternalSystemParams.getTokenPrefix(baseExternalSystemParams.getAuthConfig().getAuthType())
-                + externalSystemParameters.getToken(taskExecutionContext.getResourceParametersHelper());
+        accessToken =
+                baseExternalSystemParams.getTokenPrefix(baseExternalSystemParams.getAuthConfig().getHeaderPrefix())
+                        + externalSystemParameters.getToken(taskExecutionContext.getResourceParametersHelper());
     }
 
     @Override
@@ -141,8 +139,9 @@ public class ExternalSystemTask extends AbstractTask {
         try {
             BaseExternalSystemParams.InterfaceConfig submitConfig = baseExternalSystemParams.getSubmitInterface();
             String url = replaceParameterPlaceholders(baseExternalSystemParams.getCompleteUrl(submitConfig.getUrl()));
-            Map<String, String> headers = buildHeaders(submitConfig);
+            Map<String, String> headers = new HashMap<>();
             buildAuthHeader(accessToken, headers);
+            buildHeaders(submitConfig, headers);
             Map<String, Object> requestBody = buildRequestBody(submitConfig);
             Map<String, Object> requestParams = buildRequestParams(submitConfig);
 
@@ -154,7 +153,6 @@ public class ExternalSystemTask extends AbstractTask {
             }
 
             parseSubmitResponse(submitConfig.getResponseParameters(), response.getBody());
-            log.info("Task submitted successfully, external task instance id: {}", externalTaskInstanceId);
         } catch (Exception e) {
             log.error("Submit task failed:{}", e);
             throw new TaskException("Submit task failed", e);
@@ -208,8 +206,9 @@ public class ExternalSystemTask extends AbstractTask {
             BaseExternalSystemParams.PollingInterfaceConfig pollConfig =
                     baseExternalSystemParams.getPollStatusInterface();
             String url = replaceParameterPlaceholders(baseExternalSystemParams.getCompleteUrl(pollConfig.getUrl()));
-            Map<String, String> headers = buildHeaders(pollConfig);
+            Map<String, String> headers = new HashMap<>();
             buildAuthHeader(accessToken, headers);
+            buildHeaders(pollConfig, headers);
             Map<String, Object> requestBody = buildRequestBody(pollConfig);
             Map<String, Object> requestParams = buildRequestParams(pollConfig);
 
@@ -221,11 +220,23 @@ public class ExternalSystemTask extends AbstractTask {
                 throw new TaskException("polling task failed: " + response.getBody());
             }
 
-            String statusPath = pollConfig.getPollingSuccessConfig().getSuccessField();
-            Object statusObj = JsonPath.read(response.getBody(), statusPath);
-            log.info("PollTaskStatus successfully, external task instance status: {}", statusObj.toString());
+            String successField = pollConfig.getPollingSuccessConfig().getSuccessField();
+            String failureField = pollConfig.getPollingFailureConfig().getFailureField();
 
-            return statusObj.toString().replace("\"", "");
+            Object successStatusObj = JsonPath.read(response.getBody(), successField);
+            Object failureStatusObj = JsonPath.read(response.getBody(), failureField);
+
+            log.info("PollTaskStatus successfully, external task instance success status: {}, failure status: {}",
+                    successStatusObj.toString(), failureStatusObj.toString());
+
+            if (successStatusObj != null) {
+                return successStatusObj.toString();
+            } else if (failureStatusObj != null) {
+                return failureStatusObj.toString();
+            } else {
+                log.warn("successStatusObj and failureStatusObj are null");
+                return "UNKNOWN";
+            }
         } catch (Exception e) {
             log.error("Poll task status failed", e);
             throw new TaskException("Poll task status failed", e);
@@ -238,8 +249,9 @@ public class ExternalSystemTask extends AbstractTask {
             BaseExternalSystemParams.InterfaceConfig stopConfig = baseExternalSystemParams.getStopInterface();
             log.info("start cancel External System TaskInstance");
             String url = replaceParameterPlaceholders(baseExternalSystemParams.getCompleteUrl(stopConfig.getUrl()));
-            Map<String, String> headers = buildHeaders(stopConfig);
+            Map<String, String> headers = new HashMap<>();
             buildAuthHeader(accessToken, headers);
+            buildHeaders(stopConfig, headers);
             Map<String, Object> requestBody = buildRequestBody(stopConfig);
             Map<String, Object> requestParams = buildRequestParams(stopConfig);
 
@@ -266,12 +278,27 @@ public class ExternalSystemTask extends AbstractTask {
         while (retryCount < maxRetries) {
             OkHttpRequestHeaders okHttpRequestHeaders = new OkHttpRequestHeaders();
             okHttpRequestHeaders.setHeaders(headers);
-            okHttpRequestHeaders.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_JSON);
+            OkHttpRequestHeaderContentType contentType = getContentType(headers);
+            okHttpRequestHeaders.setOkHttpRequestHeaderContentType(getContentType(headers));
             try {
                 switch (method) {
                     case POST:
-                        return OkHttpUtils.post(url, okHttpRequestHeaders, requestParams, requestBody, connectTimeout,
-                                readTimeout, writeTimeout);
+                        if (contentType.equals(OkHttpRequestHeaderContentType.APPLICATION_JSON)) {
+                            return OkHttpUtils.post(url, okHttpRequestHeaders, requestParams, requestBody,
+                                    connectTimeout,
+                                    readTimeout, writeTimeout);
+                        }
+                        if (contentType.equals(OkHttpRequestHeaderContentType.APPLICATION_FORM_URLENCODED)) {
+                            FormBody.Builder formBodyBuilder = new FormBody.Builder();
+                            if (requestBody != null) {
+                                for (Map.Entry<String, Object> entry : requestBody.entrySet()) {
+                                    formBodyBuilder.add(entry.getKey(), entry.getValue().toString());
+                                }
+                            }
+                            return OkHttpUtils.postFormBody(url, okHttpRequestHeaders, requestParams,
+                                    formBodyBuilder.build(), connectTimeout,
+                                    readTimeout, writeTimeout);
+                        }
                     case PUT:
                         return OkHttpUtils.put(url, okHttpRequestHeaders, requestBody, connectTimeout, readTimeout,
                                 writeTimeout);
@@ -302,8 +329,8 @@ public class ExternalSystemTask extends AbstractTask {
         headers.put("Authorization", accessToken);
     }
 
-    private Map<String, String> buildHeaders(BaseExternalSystemParams.InterfaceConfig config) {
-        Map<String, String> requestParams = new HashMap<>();
+    private Map<String, String> buildHeaders(BaseExternalSystemParams.InterfaceConfig config,
+                                             Map<String, String> requestParams) {
         for (BaseExternalSystemParams.RequestParameter param : config.getParameters()) {
             if (param.getLocation().equals(BaseExternalSystemParams.ParamLocation.HEADER)) {
                 requestParams.put(param.getParamName(), replaceParameterPlaceholders(param.getParamValue()));
@@ -361,10 +388,6 @@ public class ExternalSystemTask extends AbstractTask {
                     continue;
                 }
 
-                if (EXTERNAL_TASKINSTANCE_ID.equals(key)) {
-                    externalTaskInstanceId = value.toString().replace("\"", "");
-                    log.info("Parsed external task instance id: {}", externalTaskInstanceId);
-                }
                 parameterMap.put(key, value.toString().replace("\"", ""));
                 log.info("Parsed parameter {}: {}", key, value.toString());
 
@@ -391,8 +414,8 @@ public class ExternalSystemTask extends AbstractTask {
             }
         }
         if (externalSystemParameters.getExternalTaskId() != null) {
-            parameterMap.put(EXTERNAL_TASK_ID, externalSystemParameters.getExternalTaskId());
-            parameterMap.put(EXTERNAL_TASK_NAME, externalSystemParameters.getExternalTaskName());
+            parameterMap.put(ExternalTaskConstants.EXTERNAL_TASK_ID, externalSystemParameters.getExternalTaskId());
+            parameterMap.put(ExternalTaskConstants.EXTERNAL_TASK_NAME, externalSystemParameters.getExternalTaskName());
         }
     }
 
@@ -433,12 +456,22 @@ public class ExternalSystemTask extends AbstractTask {
      * 检查是否启用了超时失败策略
      */
     private boolean isTimeoutFailureEnabled() {
-        return
-                taskExecutionContext.getTaskTimeoutStrategy() != null
-                        && taskExecutionContext.getTaskTimeout() > 0
-                        && taskExecutionContext.getTaskTimeout() < Integer.MAX_VALUE
-                        && (taskExecutionContext.getTaskTimeoutStrategy() == TaskTimeoutStrategy.FAILED
+        return taskExecutionContext.getTaskTimeoutStrategy() != null
+                && taskExecutionContext.getTaskTimeout() > 0
+                && taskExecutionContext.getTaskTimeout() < Integer.MAX_VALUE
+                && (taskExecutionContext.getTaskTimeoutStrategy() == TaskTimeoutStrategy.FAILED
                         || taskExecutionContext.getTaskTimeoutStrategy() == TaskTimeoutStrategy.WARNFAILED);
+    }
+
+    private OkHttpRequestHeaderContentType getContentType(Map<String, String> headers) {
+        if (headers == null || !headers.containsKey(ExternalTaskConstants.CONTENT_TYPE)
+                || !headers.containsKey(ExternalTaskConstants.CONTENT_TYPE_LOWERCASE)) {
+            return OkHttpRequestHeaderContentType.APPLICATION_JSON;
+        }
+        String contentType = headers.get(ExternalTaskConstants.CONTENT_TYPE);
+        return OkHttpRequestHeaderContentType.fromValue(contentType) != null
+                ? OkHttpRequestHeaderContentType.fromValue(contentType)
+                : OkHttpRequestHeaderContentType.APPLICATION_JSON;
     }
 
 }

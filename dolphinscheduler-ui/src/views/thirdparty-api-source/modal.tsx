@@ -11,9 +11,12 @@ import {
   NSpace,
   NDivider,
   NDynamicInput,
-  NSelect
+  NSelect,
+  NTooltip,
+  NIcon
 } from 'naive-ui'
 import MonacoEditor from '@/components/monaco-editor'
+import { InfoCircleOutlined } from '@vicons/antd';
 
 export default defineComponent({
   name: 'ThirdpartyApiSourceModal',
@@ -55,6 +58,7 @@ export default defineComponent({
         oauth2GrantType: '',
         oauth2Username: '',
         oauth2Password: '',
+        headerPrefix: 'Basic',
         authMappings: [] as any[]
       },
       selectInterface: {
@@ -64,7 +68,7 @@ export default defineComponent({
         body: '',
         responseParameters: [
           { key: 'id', jsonPath: '' },
-          { key: 'name', jsonPath: ''}
+          { key: 'name', jsonPath: '' }
         ]
       },
       submitInterface: {
@@ -220,36 +224,23 @@ export default defineComponent({
           trigger: ['blur', 'change']
         }
       ],
-       'selectInterface.responseParameters': [
-          {
-            validator: (rule: any, value: any) => {
-              const idField = value.find((item: any) => item.key === 'id')
-              const nameField = value.find((item: any) => item.key === 'name')
+      'selectInterface.responseParameters': [
+        {
+          validator: (rule: any, value: any) => {
+            const idField = value.find((item: any) => item.key === 'id')
+            const nameField = value.find((item: any) => item.key === 'name')
 
-              if (!idField || !idField.jsonPath) {
-                return new Error(t('thirdparty_api_source.id_jsonpath_required'))
-              }
-              if (!nameField || !nameField.jsonPath) {
-                return new Error(t('thirdparty_api_source.name_jsonpath_required'))
-              }
-              return true
-            },
-            trigger: ['blur', 'change']
-          }
-        ],
-        'submitInterface.responseParameters': [
-          {
-            validator: (rule: any, value: any) => {
-              const taskInstanceField = value.find((item: any) => item.key === 'taskInstanceId')
-
-              if (!taskInstanceField || !taskInstanceField.jsonPath) {
-                return new Error(t('thirdparty_api_source.taskinstanceid_jsonpath_required'))
-              }
-              return true
-            },
-            trigger: ['blur', 'change']
-          }
-        ]
+            if (!idField || !idField.jsonPath) {
+              return new Error(t('thirdparty_api_source.id_jsonpath_required'))
+            }
+            if (!nameField || !nameField.jsonPath) {
+              return new Error(t('thirdparty_api_source.name_jsonpath_required'))
+            }
+            return true
+          },
+          trigger: ['blur', 'change']
+        }
+      ]
     }
 
     const formRef = ref<FormInst | null>(null)
@@ -258,9 +249,10 @@ export default defineComponent({
     // 定义表单的初始状态
     const getInitialFormState = () => ({
       systemName: '',
-      serviceAddress: '',
+      serviceAddress: 'http://',
       authConfig: {
-        authType: 'BASIC_AUTH',
+        authType: '',
+        headerPrefix: '',
         basicUsername: '',
         basicPassword: '',
         jwtToken: '',
@@ -314,7 +306,6 @@ export default defineComponent({
 
     // 保存原始编辑数据，用于测试连接
     const originalEditData = ref<any>(null)
-
     // 监听modal显示状态和数据变化
     watch([() => props.show, () => props.data, () => props.operationType], ([show, data, operationType]) => {
       if (show) {
@@ -322,18 +313,30 @@ export default defineComponent({
           originalEditData.value = JSON.parse(JSON.stringify(data))
           resetForm()
           const editData = originalEditData.value
-          const initialState = getInitialFormState()
-          Object.keys(initialState).forEach(key => {
-            if (editData.hasOwnProperty(key)) {
-              ; (form as any)[key] = editData[key]
-            }
-          })
+          // 完全使用后端返回的数据
+          Object.assign(form, editData)
         } else {
           originalEditData.value = null
           resetForm()
+          // 只在创建模式下设置默认值
+          form.authConfig.authType = 'BASIC_AUTH'
+          form.authConfig.headerPrefix = 'Basic'
         }
       }
     }, { immediate: true })
+
+    watch(() => form.authConfig.authType, (newAuthType) => {
+      // 只在创建模式下自动设置headerPrefix
+      if (!isEditMode.value) {
+        if (newAuthType === 'BASIC_AUTH') {
+          form.authConfig.headerPrefix = 'Basic'
+        } else if (newAuthType === 'JWT' || newAuthType === 'OAUTH2') {
+          form.authConfig.headerPrefix = 'Bearer'
+        } else {
+          form.authConfig.headerPrefix = ''
+        }
+      }
+    })
 
     const handleClose = () => {
       resetForm()
@@ -407,9 +410,43 @@ export default defineComponent({
               <NInput v-model={[form.serviceAddress, 'value']} placeholder={t('thirdparty_api_source.service_address_tips')} />
             </NFormItem>
             <NDivider />
-            <NFormItem label={t('thirdparty_api_source.auth_type')} path="authConfig.authType" required>
-              <NSelect v-model={[form.authConfig.authType, 'value']} options={authTypeOptions.value} class={styles['auth-type-select']} placeholder={t('thirdparty_api_source.auth_type_tips')} />
+            <NFormItem label={(
+              <NSpace align="center" size="small">
+                <span>{t('thirdparty_api_source.auth_type')}</span>
+                <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                  {{
+                    trigger: () => (
+                      <NIcon>
+                        <InfoCircleOutlined />
+                      </NIcon>
+                    ),
+                    default: () => t('thirdparty_api_source.auth_type_detail_info')
+                  }}
+                </NTooltip>
+              </NSpace>
+            )}
+              path="authConfig.authType"
+              required
+            >
+              <NSelect
+                v-model={[form.authConfig.authType, 'value']}
+                options={authTypeOptions.value}
+                class={styles['auth-type-select']}
+                placeholder={t('thirdparty_api_source.auth_type_tips')}
+              />
             </NFormItem>
+
+
+
+            <NFormItem label={t('thirdparty_api_source.header_prefix')}>
+              <NInput
+                v-model={[form.authConfig.headerPrefix, 'value']}
+                placeholder={t('thirdparty_api_source.header_prefix_tips')}
+                // Show empty input when headerPrefix is empty
+                value={form.authConfig.headerPrefix || ''}
+              />
+            </NFormItem>
+
             {/* BASIC_AUTH */}
             <NFormItem v-show={form.authConfig.authType === 'BASIC_AUTH'} label={t('thirdparty_api_source.username')} path="authConfig.basicUsername" required>
               <NInput v-model={[form.authConfig.basicUsername, 'value']} placeholder={t('thirdparty_api_source.username_tips')} />
@@ -418,7 +455,27 @@ export default defineComponent({
               <NInput v-model={[form.authConfig.basicPassword, 'value']} placeholder={t('thirdparty_api_source.password_tips')} type="password" show-password-on="click" />
             </NFormItem>
             {/* OAUTH2 */}
-            <NFormItem v-show={form.authConfig.authType === 'OAUTH2'} label={t('thirdparty_api_source.oauth2_token_url')} path="authConfig.oauth2TokenUrl" required>
+
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.oauth2_token_url')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                    {{
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.oauth2_url_info')
+                    }}
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="authConfig.oauth2TokenUrl"
+              required
+            >
+
               <NInput v-model={[form.authConfig.oauth2TokenUrl, 'value']} placeholder={t('thirdparty_api_source.oauth2_token_url_tips')} />
             </NFormItem>
             <NFormItem v-show={form.authConfig.authType === 'OAUTH2'} label={t('thirdparty_api_source.oauth2_client_id')} path="authConfig.oauth2ClientId" required>
@@ -457,8 +514,25 @@ export default defineComponent({
               </NDynamicInput>
             </NFormItem>
             <NDivider />
-            <NFormItem label={t('thirdparty_api_source.input_interface')} path="selectInterface.url" required>
-              <NInput v-model={[form.selectInterface.url, 'value']} placeholder={t('thirdparty_api_source.input_interface_tips')} onChange={() => formRef.value?.validate?.()} />
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.input_interface')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                    {{
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.input_interface_detail_info')
+                    }}
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="selectInterface.url"
+              required
+            >            <NInput v-model={[form.selectInterface.url, 'value']} placeholder={t('thirdparty_api_source.input_interface_tips')} onChange={() => formRef.value?.validate?.()} />
               <NSelect v-model={[form.selectInterface.method, 'value']} options={methodOptions.value} class={styles['method-select']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.parameters')}>
@@ -479,7 +553,23 @@ export default defineComponent({
               </NDynamicInput>
             </NFormItem>
             {(form.selectInterface.method === 'POST' || form.selectInterface.method === 'PUT') && (
-              <NFormItem label={t('thirdparty_api_source.request_body')}>
+              <NFormItem
+                label={(
+                  <NSpace align="center" size="small">
+                    <span>{t('thirdparty_api_source.request_body')}</span>
+                    <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                      {{
+                        trigger: () => (
+                          <NIcon style={{ marginLeft: '4px' }}>
+                            <InfoCircleOutlined />
+                          </NIcon>
+                        ),
+                        default: () => t('thirdparty_api_source.input_interface_body_info')
+                      }}
+                    </NTooltip>
+                  </NSpace>
+                )}
+              >
                 <MonacoEditor
                   v-model={[form.selectInterface.body, 'value']}
                   options={{
@@ -489,37 +579,73 @@ export default defineComponent({
                 />
               </NFormItem>
             )}
-               <NFormItem label={t('thirdparty_api_source.extract_response_data')} path="selectInterface.responseParameters" required>
-                  <NDynamicInput
-                    v-model={[form.selectInterface.responseParameters, 'value']}
-                    onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
-                    style={{ width: '100%' }}
-                  >
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.extract_response_data')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
                     {{
-                      default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
-                        <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
-                          <NInput
-                            v-model={[value.key, 'value']}
-                            placeholder={t('thirdparty_api_source.extract_field')}
-                            class={styles['extract-key']}
-                            disabled={value.disabled}
-                          />
-                          <NInput
-                            v-model={[value.jsonPath, 'value']}
-                            placeholder={t('thirdparty_api_source.json_path_list')}
-                            class={styles['extract-path']}
-                            disabled={value.disabled}
-                          />
-                        </NSpace>
-                      )
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.input_interface_extract_info')
                     }}
-                  </NDynamicInput>
-                </NFormItem>
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="selectInterface.responseParameters"
+              required
+            >
+              <NDynamicInput
+                v-model={[form.selectInterface.responseParameters, 'value']}
+                onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
+                style={{ width: '100%' }}
+              >
+                {{
+                  default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
+                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                      <NInput
+                        v-model={[value.key, 'value']}
+                        placeholder={t('thirdparty_api_source.extract_field')}
+                        class={styles['extract-key']}
+                        disabled={value.disabled}
+                      />
+                      <NInput
+                        v-model={[value.jsonPath, 'value']}
+                        placeholder={t('thirdparty_api_source.json_path_list')}
+                        class={styles['extract-path']}
+                        disabled={value.disabled}
+                      />
+                    </NSpace>
+                  )
+                }}
+              </NDynamicInput>
+            </NFormItem>
             <NDivider />
-            <NFormItem label={t('thirdparty_api_source.submit_interface')} path="submitInterface.url" required>
-              <NInput v-model={[form.submitInterface.url, 'value']} placeholder={t('thirdparty_api_source.submit_interface_tips')} class={styles['submit-url']} onChange={() => formRef.value?.validate?.()} />
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.submit_interface')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                    {{
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.submit_interface_detail_info')
+                    }}
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="submitInterface.url"
+              required
+            >              <NInput v-model={[form.submitInterface.url, 'value']} placeholder={t('thirdparty_api_source.submit_interface_tips')} class={styles['submit-url']} onChange={() => formRef.value?.validate?.()} />
               <NSelect v-model={[form.submitInterface.method, 'value']} options={methodOptions.value} class={styles['submit-method']} />
             </NFormItem>
+
             <NFormItem label={t('thirdparty_api_source.parameters')}>
               <NDynamicInput
                 v-model={[form.submitInterface.parameters, 'value']}
@@ -538,7 +664,27 @@ export default defineComponent({
               </NDynamicInput>
             </NFormItem>
             {(form.submitInterface.method === 'POST' || form.submitInterface.method === 'PUT') && (
-              <NFormItem label={t('thirdparty_api_source.request_body')}>
+
+
+
+              <NFormItem
+                label={(
+                  <NSpace align="center" size="small">
+                    <span>{t('thirdparty_api_source.request_body')}</span>
+                    <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                      {{
+                        trigger: () => (
+                          <NIcon style={{ marginLeft: '4px' }}>
+                            <InfoCircleOutlined />
+                          </NIcon>
+                        ),
+                        default: () => t('thirdparty_api_source.submit_interface_body_info')
+                      }}
+                    </NTooltip>
+                  </NSpace>
+                )}
+              >
+
                 <MonacoEditor
                   v-model={[form.submitInterface.body, 'value']}
                   options={{
@@ -548,35 +694,70 @@ export default defineComponent({
                 />
               </NFormItem>
             )}
-                    <NFormItem label={t('thirdparty_api_source.extract_response_data')} path="submitInterface.responseParameters" required>
-                      <NDynamicInput
-                        v-model={[form.submitInterface.responseParameters, 'value']}
-                        onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
-                        style={{ width: '100%' }}
-                      >
-                        {{
-                          default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
-                            <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
-                              <NInput
-                                v-model={[value.key, 'value']}
-                                placeholder={t('thirdparty_api_source.extract_field')}
-                                class={styles['extract-key']}
-                                disabled={value.disabled}
-                              />
-                              <NInput
-                                v-model={[value.jsonPath, 'value']}
-                                placeholder={t('thirdparty_api_source.json_path')}
-                                class={styles['extract-path']}
-                                disabled={value.disabled}
-                              />
-                            </NSpace>
-                          )
-                        }}
-                      </NDynamicInput>
-                    </NFormItem>
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.extract_response_data')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                    {{
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.submit_interface_extract_info')
+                    }}
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="submitInterface.responseParameters"
+              required
+            >
+              <NDynamicInput
+                v-model={[form.submitInterface.responseParameters, 'value']}
+                onCreate={() => ({ key: '', jsonPath: '', disabled: false })}
+                style={{ width: '100%' }}
+              >
+                {{
+                  default: ({ value }: { value: { key: string; jsonPath: string; disabled: boolean } }) => (
+                    <NSpace style={{ width: '100%', flexWrap: 'wrap' }}>
+                      <NInput
+                        v-model={[value.key, 'value']}
+                        placeholder={t('thirdparty_api_source.extract_field')}
+                        class={styles['extract-key']}
+                        disabled={value.disabled}
+                      />
+                      <NInput
+                        v-model={[value.jsonPath, 'value']}
+                        placeholder={t('thirdparty_api_source.json_path')}
+                        class={styles['extract-path']}
+                        disabled={value.disabled}
+                      />
+                    </NSpace>
+                  )
+                }}
+              </NDynamicInput>
+            </NFormItem>
             <NDivider />
-            <NFormItem label={t('thirdparty_api_source.query_interface')} path="pollStatusInterface.url" required>
-              <NInput v-model={[form.pollStatusInterface.url, 'value']} placeholder={t('thirdparty_api_source.query_interface_tips')} onChange={() => formRef.value?.validate?.()} />
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.query_interface')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                    {{
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.query_interface_detail_info')
+                    }}
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="pollStatusInterface.url"
+              required
+            >              <NInput v-model={[form.pollStatusInterface.url, 'value']} placeholder={t('thirdparty_api_source.query_interface_tips')} onChange={() => formRef.value?.validate?.()} />
               <NSelect v-model={[form.pollStatusInterface.method, 'value']} options={methodOptions.value} class={styles['method-select']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.parameters')}>
@@ -597,7 +778,25 @@ export default defineComponent({
               </NDynamicInput>
             </NFormItem>
             {(form.pollStatusInterface.method === 'POST' || form.pollStatusInterface.method === 'PUT') && (
-              <NFormItem label={t('thirdparty_api_source.request_body')}>
+
+              <NFormItem
+                label={(
+                  <NSpace align="center" size="small">
+                    <span>{t('thirdparty_api_source.request_body')}</span>
+                    <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                      {{
+                        trigger: () => (
+                          <NIcon style={{ marginLeft: '4px' }}>
+                            <InfoCircleOutlined />
+                          </NIcon>
+                        ),
+                        default: () => t('thirdparty_api_source.query_interface_body_info')
+                      }}
+                    </NTooltip>
+                  </NSpace>
+                )}
+              >
+
                 <MonacoEditor
                   v-model={[form.pollStatusInterface.body, 'value']}
                   options={{
@@ -607,17 +806,70 @@ export default defineComponent({
                 />
               </NFormItem>
             )}
-            <NFormItem label={t('thirdparty_api_source.success_condition')} path="pollStatusInterface.pollingSuccessConfig" required>
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.success_condition')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                    {{
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.query_interface_success_info')
+                    }}
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="pollStatusInterface.pollingSuccessConfig"
+              required
+            >
               <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successField, 'value']} placeholder={t('thirdparty_api_source.success_field_tips')} class={styles['condition-field']} onChange={() => formRef.value?.validate?.()} />
               <NInput v-model={[form.pollStatusInterface.pollingSuccessConfig.successValue, 'value']} placeholder={t('thirdparty_api_source.success_value_tips')} class={styles['condition-value']} onChange={() => formRef.value?.validate?.()} />
             </NFormItem>
-            <NFormItem label={t('thirdparty_api_source.failure_condition')} path="pollStatusInterface.pollingFailureConfig" required>
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.failure_condition')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                    {{
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.query_interface_failed_info')
+                    }}
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="pollStatusInterface.pollingFailureConfig"
+              required
+            >
               <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.failureField, 'value']} placeholder={t('thirdparty_api_source.failure_field_tips')} class={styles['condition-field']} onChange={() => formRef.value?.validate?.()} />
               <NInput v-model={[form.pollStatusInterface.pollingFailureConfig.failureValue, 'value']} placeholder={t('thirdparty_api_source.failure_value_tips')} class={styles['condition-value']} onChange={() => formRef.value?.validate?.()} />
             </NFormItem>
             <NDivider />
-            <NFormItem label={t('thirdparty_api_source.stop_interface')} path="stopInterface.url" required>
-              <NInput v-model={[form.stopInterface.url, 'value']} placeholder={t('thirdparty_api_source.stop_interface_tips')} onChange={() => formRef.value?.validate?.()} />
+            <NFormItem
+              label={(
+                <NSpace align="center" size="small">
+                  <span>{t('thirdparty_api_source.stop_interface')}</span>
+                  <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                    {{
+                      trigger: () => (
+                        <NIcon style={{ marginLeft: '4px' }}>
+                          <InfoCircleOutlined />
+                        </NIcon>
+                      ),
+                      default: () => t('thirdparty_api_source.stop_interface_detail_info')
+                    }}
+                  </NTooltip>
+                </NSpace>
+              )}
+              path="stopInterface.url"
+              required
+            >              <NInput v-model={[form.stopInterface.url, 'value']} placeholder={t('thirdparty_api_source.stop_interface_tips')} onChange={() => formRef.value?.validate?.()} />
               <NSelect v-model={[form.stopInterface.method, 'value']} options={methodOptions.value} class={styles['method-select']} />
             </NFormItem>
             <NFormItem label={t('thirdparty_api_source.parameters')}>
@@ -638,7 +890,23 @@ export default defineComponent({
               </NDynamicInput>
             </NFormItem>
             {(form.stopInterface.method === 'POST' || form.stopInterface.method === 'PUT') && (
-              <NFormItem label={t('thirdparty_api_source.request_body')}>
+              <NFormItem
+                label={(
+                  <NSpace align="center" size="small">
+                    <span>{t('thirdparty_api_source.request_body')}</span>
+                    <NTooltip placement="top-start" style={{ maxWidth: '500px', zIndex: 5000 }} flip={false}>
+                      {{
+                        trigger: () => (
+                          <NIcon style={{ marginLeft: '4px' }}>
+                            <InfoCircleOutlined />
+                          </NIcon>
+                        ),
+                        default: () => t('thirdparty_api_source.stop_interface_body_info')
+                      }}
+                    </NTooltip>
+                  </NSpace>
+                )}
+              >
                 <MonacoEditor
                   v-model={[form.stopInterface.body, 'value']}
                   options={{

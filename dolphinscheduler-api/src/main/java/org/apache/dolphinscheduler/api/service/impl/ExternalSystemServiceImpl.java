@@ -37,6 +37,7 @@ import org.apache.dolphinscheduler.plugin.datasource.api.utils.PasswordUtils;
 import org.apache.dolphinscheduler.plugin.task.api.TaskException;
 import org.apache.dolphinscheduler.plugin.task.externalSystem.AuthenticationUtils;
 import org.apache.dolphinscheduler.plugin.task.externalSystem.BaseExternalSystemParams;
+import org.apache.dolphinscheduler.plugin.task.externalSystem.ExternalTaskConstants;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import lombok.extern.slf4j.Slf4j;
+import okhttp3.FormBody;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -118,7 +120,8 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         externalSystemParam.setSystemName(systemName);
 
         // 检查服务地址
-        if (externalSystemParam.getServiceAddress() == null || externalSystemParam.getServiceAddress().trim().isEmpty()) {
+        if (externalSystemParam.getServiceAddress() == null
+                || externalSystemParam.getServiceAddress().trim().isEmpty()) {
             throw new ServiceException(Status.EXTERNAL_SYSTEM_SERVICE_ADDRESS_EMPTY);
         }
         externalSystemParam.setServiceAddress(externalSystemParam.getServiceAddress().trim());
@@ -299,34 +302,31 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
 
     @Override
     public boolean testExternalSystemConnection(BaseExternalSystemParams baseExternalSystemParam) {
-            OkHttpResponse response = callSelectInterface(baseExternalSystemParam, false);
-            if (response.getStatusCode() == 200) {
-                return true;
-            }else{
-                log.error("select interface failed,response: " + response);
-                throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_AUTH_FAILED);
-            }
+        OkHttpResponse response = callSelectInterface(baseExternalSystemParam, false);
+        if (response.getStatusCode() == 200) {
+            return true;
+        } else {
+            log.error("select interface failed,response: " + response);
+            throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_SELECT_FAILED);
+        }
     }
 
     private OkHttpResponse callSelectInterface(BaseExternalSystemParams baseExternalSystemParam, boolean dbPassword) {
-            if (baseExternalSystemParam == null || baseExternalSystemParam.getSelectInterface() == null) {
-                throw new IllegalArgumentException("BaseExternalSystemParams or SelectInterface cannot be null");
-            }
+        if (baseExternalSystemParam == null || baseExternalSystemParam.getSelectInterface() == null) {
+            throw new IllegalArgumentException("BaseExternalSystemParams or SelectInterface cannot be null");
+        }
 
-            BaseExternalSystemParams.InterfaceConfig selectConfig = baseExternalSystemParam.getSelectInterface();
+        BaseExternalSystemParams.InterfaceConfig selectConfig = baseExternalSystemParam.getSelectInterface();
 
-            // 替换参数占位符
-            String url = baseExternalSystemParam.getCompleteUrl(selectConfig.getUrl());
+        // 替换参数占位符
+        String url = baseExternalSystemParam.getCompleteUrl(selectConfig.getUrl());
 
-            OkHttpRequestHeaders headers = new OkHttpRequestHeaders();
-            headers.setOkHttpRequestHeaderContentType(OkHttpRequestHeaderContentType.APPLICATION_JSON);
+        Map<String, String> headeMap = new HashMap<>();
+        Map<String, Object> requestBody = new HashMap<>();
+        Map<String, Object> requestParams = new HashMap<>();
+        String token;
 
-            Map<String, String> headeMap = new HashMap<>();
-            Map<String, Object> requestBody = new HashMap<>();
-            Map<String, Object> requestParams = new HashMap<>();
-            String token;
-
-            try{
+        try {
             if (dbPassword) {
                 // 已保存信息，从数据库中获取，并解密
                 BaseExternalSystemParams.AuthConfig authConfig = baseExternalSystemParam.getAuthConfig();
@@ -368,14 +368,15 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
                     // 新建信息测试连接
                     token = AuthenticationUtils.authenticateAndGetToken(baseExternalSystemParam);
                 }
-            }}catch(Exception e) {
-                log.error("Authentication failed: {}", e.getMessage());
-                throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_AUTH_FAILED);
             }
+        } catch (Exception e) {
+            log.error("Authentication failed: {}", e.getMessage());
+            throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_AUTH_FAILED);
+        }
 
-                try{
-                headeMap.put("Authorization",
-                    baseExternalSystemParam.getTokenPrefix(baseExternalSystemParam.getAuthConfig().getAuthType())
+        try {
+            headeMap.put("Authorization",
+                    baseExternalSystemParam.getTokenPrefix(baseExternalSystemParam.getAuthConfig().getHeaderPrefix())
                             + token);
 
             // 处理参数
@@ -387,24 +388,39 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
                     case "HEADER":
                         headeMap.put(param.getParamName(), value);
                         break;
-                    case "BODY":
-                        if ("body".equals(param.getParamName())) {
-                            requestBody = JSONUtils.parseObject(value, Map.class);
-                        }
-
-                        break;
                     case "PARAM":
                         requestParams.put(param.getParamName(), value);
                         break;
                 }
             }
+            if (selectConfig.getBody() != null) {
+                requestBody = JSONUtils.parseObject((selectConfig.getBody()), Map.class);
+            }
+            OkHttpRequestHeaders headers = new OkHttpRequestHeaders();
+            OkHttpRequestHeaderContentType contentType = getContentType(headeMap);
+
+            headers.setOkHttpRequestHeaderContentType(contentType);
             if (!headeMap.isEmpty()) {
                 headers.setHeaders(headeMap);
             }
-
             OkHttpResponse response;
             if (BaseExternalSystemParams.HttpMethod.POST.equals(selectConfig.getMethod())) {
-                response = OkHttpUtils.post(url, headers, requestParams, requestBody, 120000, 120000, 120000);
+                if (contentType.equals(OkHttpRequestHeaderContentType.APPLICATION_JSON)) {
+                    response = OkHttpUtils.post(url, headers, requestParams, requestBody, 120000, 120000, 120000);
+
+                } else if (contentType.equals(OkHttpRequestHeaderContentType.APPLICATION_FORM_URLENCODED)) {
+                    FormBody.Builder formBodyBuilder = new FormBody.Builder();
+                    if (requestBody != null) {
+                        for (Map.Entry<String, Object> entry : requestBody.entrySet()) {
+                            formBodyBuilder.add(entry.getKey(), entry.getValue().toString());
+                        }
+                    }
+                    response = OkHttpUtils.postFormBody(url, headers, requestParams, formBodyBuilder.build(), 120000,
+                            120000, 120000);
+                } else {
+                    log.error("select task failed, OkHttpRequestHeaderContentType not support: {},", contentType);
+                    throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_AUTH_FAILED);
+                }
             } else if (BaseExternalSystemParams.HttpMethod.PUT.equals(selectConfig.getMethod())) {
                 response = OkHttpUtils.put(url, headers, requestBody, 120000, 120000, 120000);
             } else {
@@ -417,6 +433,18 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
                     dbPassword, e);
             throw new ServiceException(Status.EXTERNAL_SYSTEM_CONNECT_AUTH_FAILED);
         }
+    }
+
+    private OkHttpRequestHeaderContentType getContentType(Map<String, String> headers) {
+        String contentType = headers.get("Content-Type");
+        if (contentType != null) {
+            if (contentType.contains("application/json")) {
+                return OkHttpRequestHeaderContentType.APPLICATION_JSON;
+            } else if (contentType.contains("application/x-www-form-urlencoded")) {
+                return OkHttpRequestHeaderContentType.APPLICATION_FORM_URLENCODED;
+            }
+        }
+        return OkHttpRequestHeaderContentType.APPLICATION_JSON; // 默认值
     }
 
     private void decodePassword(BaseExternalSystemParams.AuthConfig authConfig) {
@@ -437,18 +465,21 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     @Override
     public PageInfo<ExternalSystem> queryExternalSystemListPaging(User loginUser, String searchVal, Integer pageNo,
                                                                   Integer pageSize) {
+        if (null != searchVal) {
+            searchVal = searchVal.trim();
+        }
         Page<ExternalSystem> page = new Page<>(pageNo, pageSize);
         IPage<ExternalSystem> externalSystemList;
         PageInfo<ExternalSystem> pageInfo = new PageInfo<>(pageNo, pageSize);
         if (loginUser.getUserType().equals(UserType.ADMIN_USER)) {
-            externalSystemList = externalSystemMapper.selectPaging(page, searchVal.trim(), 0);
+            externalSystemList = externalSystemMapper.selectPaging(page, searchVal, 0);
         } else {
             Set<Integer> ids = resourcePermissionCheckService
                     .userOwnedResourceIdsAcquisition(AuthorizationType.EXTERNALSYSTEM, loginUser.getId(), log);
             if (ids.isEmpty()) {
                 return pageInfo;
             }
-            externalSystemList = externalSystemMapper.selectPaging(page, searchVal.trim(), loginUser.getId());
+            externalSystemList = externalSystemMapper.selectPaging(page, searchVal, loginUser.getId());
         }
 
         List<ExternalSystem> externalSystems =
@@ -528,7 +559,6 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
     @Override
     public List<ExternalSystemTaskQuery> queryExternalSystemTasks(User loginUser, int externalSystemId) {
 
-        // OkHttpUtils.post();
         ExternalSystem externalSystem = externalSystemMapper.selectById(externalSystemId);
         BaseExternalSystemParams baseExternalSystemParam =
                 JSONUtils.parseObject(externalSystem.getConnectionParams(), BaseExternalSystemParams.class);
@@ -550,7 +580,7 @@ public class ExternalSystemServiceImpl extends BaseServiceImpl implements Extern
         }
 
         OkHttpResponse selectResponse = callSelectInterface(baseExternalSystemParam, true);
-        if (selectResponse.getStatusCode() != 200) {
+        if (selectResponse.getStatusCode() != ExternalTaskConstants.RESPONSE_CODE_SUCCESS) {
             throw new TaskException("Select task failed: " + selectResponse.getBody());
         }
         // 解析响应获取id name

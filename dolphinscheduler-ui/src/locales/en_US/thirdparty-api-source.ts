@@ -64,6 +64,8 @@ export default {
   extract_response_data: 'Please enter response data jsonPath',
   extract_field: 'Please enter extract field',
   json_path: 'Please enter json path',
+  header_prefix:'Authorization Token Prefix',
+  header_prefix_tips: 'Authorization header before token,e.g.Bearer',
   system_field_tips: 'Please select system field',
   request_body: 'Request Body',
   header: 'Header',
@@ -76,14 +78,14 @@ export default {
   polling_config: 'Polling Configuration',
   success_condition: 'Success Condition',
   success_field: 'Success Field',
-  success_field_tips: 'Please enter success field',
+  success_field_tips: 'Please enter success field JSONPath,e.g.$.data.status',
   success_value: 'Success Value',
-  success_value_tips: 'Please enter success value',
+  success_value_tips: 'Please enter  all enum values for success,e.g.SUCCESS,FINISHED',
   failure_condition: 'Failure Condition',
   failure_field: 'Failure Field',
-  failure_field_tips: 'Please enter failure field',
+  failure_field_tips: 'Please enter failure field JSONPath,e.g.$.data.status',
   failure_value: 'Failure Value',
-  failure_value_tips: 'Please enter failure value',
+  failure_value_tips: 'Please enter all enum values for failure,e.g.CANCELED, FAILED',
 
   // Buttons and Operations
   cancel: 'Cancel',
@@ -128,5 +130,23 @@ export default {
   external_system_task_required: 'External system task is required',
   id_jsonpath_required: 'ID field and JSONPath is required',
   name_jsonpath_required: 'Name field and JSONPath is required',
-  taskinstanceid_jsonpath_required: 'TaskInstanceId field and JSONPath is required'
-} 
+
+
+  auth_type_detail_info: 'Authentication information will be used as the Authorization header parameter for system API calls. A token prefix (e.g., "Bearer ") will be automatically added before tokens. Add any additional parameters under "Supplementary Parameters" below.',
+  oauth2_url_info: 'Enter the URL for OAuth2 authentication. Example: Append "/oauth/token" to the base service URL or provide the full address like "http://ip:port/oauth/token"' ,
+  input_interface_detail_info: 'This API retrieves available tasks when creating a new job. The system will fetch schedulable task options through this endpoint. Example: Append "/selectApi" to the base URL or use full address "http://ip:port/selectApi"' ,
+  input_interface_extract_info: 'Must extract "id" and "name" fields for frontend display (Example response: {"data":[{"id":"task1","name":"Test Task"}]}). Provide corresponding JSONPath expressions: ID path: $.data[*].id, Name path: $.data[*].name',
+  submit_interface_detail_info: 'This API submits jobs for execution. Example: Append "/startApi" to the base URL or use full address "http://ip:port/startApi"' ,
+  submit_interface_query_info: '1. Supports variable substitution: - Reference variables extracted from APIs: ${ } - Use system-built variables: $[yyyy-MM-dd HH:mm:ss] etc.',
+  query_interface_detail_info: 'Task status polling interface (auto-checked every 10 seconds): 1. Marks success when response matches "Success Condition" 2. Marks failure when response matches "Failure Condition" 3. Otherwise maintains running status',
+  query_interface_success_info: 'Success condition setup: Example response {"data":{"status":"SUCCESS"}}: - Field path: $.data.status - Success values: SUCCESS (multiple values can be comma-separated: SUCCESS,DONE,COMPLETED)',
+  query_interface_failed_info: 'Failure condition setup: Example response {"data":{"status":"FAILED"}}: - Field path: $.data.status - Failure values: FAILED,CANCELED (include all possible failure states like terminated, exception, etc.)',
+  submit_interface_extract_info: 'Optionally extract fields for variable usage in subsequent APIs (Example response: {"data":{"taskInstanceId":123}}, provide JSONPath: $.data.taskInstanceId)',
+  stop_interface_detail_info: 'Task termination interface: 1. Triggers when users manually stop tasks 2. Ensure proper termination request handling',
+  input_interface_body_info: 'Request parameters: 1. Default JSON format (Content-Type: application/json) 2. For form-data, add header: Content-Type: application/x-www-form-urlencoded.  Example: {"pageNum":1,"pageSize":1000}',
+  submit_interface_body_info: 'Request parameters: 1. Default JSON format 2. For form-data, add header: Content-Type: application/x-www-form-urlencoded.  Example: {"taskId": "${id}","complementTime": "$[yyyy-MM-dd HH:mm:ss]"}',
+  query_interface_body_info: 'Request parameters: 1. Default JSON format 2. For form-data, add header: Content-Type: application/x-www-form-urlencoded.  Example: {"taskInstanceId": "${taskInstanceId}"}',
+  stop_interface_body_info: 'Request parameters: 1. Default JSON format 2. For form-data, add header: Content-Type: application/x-www-form-urlencoded.  Example: {"taskInstanceId": "${taskInstanceId}"}'
+  
+  
+}

@@ -42,6 +42,7 @@ public class BaseExternalSystemParams {
     public static class AuthConfig {
 
         private AuthType authType; // 认证类型：BASIC, JWT, OAUTH2
+        private String headerPrefix; // 认证类型：BASIC, JWT, OAUTH2
 
         // === 基础认证（Basic Auth） ===
         private String basicUsername;
@@ -134,17 +135,11 @@ public class BaseExternalSystemParams {
         private String key;
         private String value;
     }
-    public String getTokenPrefix(AuthType authType) {
-        switch (authType) {
-            case BASIC_AUTH:
-                return "Basic ";
-            case JWT:
-                return "Bearer ";
-            case OAUTH2:
-                return "Bearer ";
-            default:
-                log.warn("Unsupported auth type: " + authType);
-                return "";
+    public String getTokenPrefix(String headerPrefix) {
+        if (null == headerPrefix || headerPrefix.isEmpty()) {
+            return "";
+        } else {
+            return headerPrefix.trim() + " ";
         }
     }
     public String getCompleteUrl(String url) {
