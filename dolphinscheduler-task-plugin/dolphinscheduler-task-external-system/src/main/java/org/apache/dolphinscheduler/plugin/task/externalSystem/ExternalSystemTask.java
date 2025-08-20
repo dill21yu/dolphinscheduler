@@ -107,25 +107,26 @@ public class ExternalSystemTask extends AbstractTask {
 
     @Override
     public void cancel() throws TaskException {
-        if (isTimeoutFailureEnabled()) {
-            long currentTime = System.currentTimeMillis();
-            long usedTime = (currentTime - taskStartTime) / 1000;
-            if (usedTime >= taskExecutionContext.getTaskTimeout()) {
-                isTimeout = true;
-                log.error("External task timeout, used time: {}s, timeout: {}s",
-                        usedTime, taskExecutionContext.getTaskTimeout());
-                setExitStatusCode(TaskConstants.EXIT_CODE_FAILURE);
-                cancelTaskInstance();
-                return;
-            }
-        }
         try {
+            log.info("cancel external system task");
             cancelTaskInstance();
         } catch (Exception e) {
             throw new TaskException("cancel external system task error", e);
         } finally {
             // 只有在启用超时失败策略且确实是超时的情况下，才设置为失败状态
-            if (isTimeout && isTimeoutFailureEnabled()) {
+            log.info("External task timeout check isTimeoutFailureEnabled:{}", isTimeoutFailureEnabled());
+            if (isTimeoutFailureEnabled()) {
+                long currentTime = System.currentTimeMillis();
+                long usedTime = (currentTime - taskStartTime) / 1000;
+                log.info("External task timeout check, used time: {}s, timeout: {}s,currentTime: {},taskStartTime: {}",
+                        usedTime, taskExecutionContext.getTaskTimeout(), currentTime, taskStartTime);
+                if (usedTime >= taskExecutionContext.getTaskTimeout()) {
+                    isTimeout = true;
+                    log.warn("External task timeout, used time: {}s, timeout: {}s",
+                            usedTime, taskExecutionContext.getTaskTimeout());
+                }
+            }
+            if (isTimeout) {
                 setExitStatusCode(TaskConstants.EXIT_CODE_FAILURE);
                 log.info("External task cancelled due to timeout, set status to FAILED");
             } else {
@@ -456,6 +457,8 @@ public class ExternalSystemTask extends AbstractTask {
      * 检查是否启用了超时失败策略
      */
     private boolean isTimeoutFailureEnabled() {
+        log.info("isTimeoutFailureEnabled:{},timeout:{}", taskExecutionContext.getTaskTimeoutStrategy(),
+                taskExecutionContext.getTaskTimeout());
         return taskExecutionContext.getTaskTimeoutStrategy() != null
                 && taskExecutionContext.getTaskTimeout() > 0
                 && taskExecutionContext.getTaskTimeout() < Integer.MAX_VALUE
