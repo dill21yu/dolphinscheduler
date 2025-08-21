@@ -118,7 +118,8 @@ public class ExternalSystemTask extends AbstractTask {
             if (isTimeoutFailureEnabled()) {
                 long currentTime = System.currentTimeMillis();
                 long usedTime = TimeUnit.MILLISECONDS.toSeconds(currentTime - taskStartTime) + 1;
-                log.info("External task timeout check, used time: {}s, timeout: {}s, currentTime: {}, taskStartTime: {}",
+                log.info(
+                        "External task timeout check, used time: {}s, timeout: {}s, currentTime: {}, taskStartTime: {}",
                         usedTime, taskExecutionContext.getTaskTimeout(), currentTime, taskStartTime);
                 if (usedTime >= taskExecutionContext.getTaskTimeout()) {
                     isTimeout = true;
