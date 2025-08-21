@@ -117,14 +117,15 @@ public class ExternalSystemTask extends AbstractTask {
             log.info("External task timeout check isTimeoutFailureEnabled:{}", isTimeoutFailureEnabled());
             if (isTimeoutFailureEnabled()) {
                 long currentTime = System.currentTimeMillis();
-                long usedTime = TimeUnit.MILLISECONDS.toSeconds(currentTime - taskStartTime) + 1;
+                long usedTimeMillis = currentTime - taskStartTime;
+                long usedTime = (usedTimeMillis + 29999) / 60000; // 超过30秒取1分钟，小于30秒取0分钟
                 log.info(
-                        "External task timeout check, used time: {}s, timeout: {}s, currentTime: {}, taskStartTime: {}",
-                        usedTime, taskExecutionContext.getTaskTimeout(), currentTime, taskStartTime);
-                if (usedTime >= taskExecutionContext.getTaskTimeout()) {
+                        "External task timeout check, used time: {}m, timeout: {}m, currentTime: {}, taskStartTime: {}",
+                        usedTime, taskExecutionContext.getTaskTimeout() / 60, currentTime, taskStartTime);
+                if (usedTime >= taskExecutionContext.getTaskTimeout() / 60) {
                     isTimeout = true;
-                    log.warn("External task timeout, used time: {}s, timeout: {}s",
-                            usedTime, taskExecutionContext.getTaskTimeout());
+                    log.warn("External task timeout, used time: {}m, timeout: {}m",
+                            usedTime, taskExecutionContext.getTaskTimeout() / 60);
                 }
             }
             if (isTimeout) {
@@ -168,11 +169,12 @@ public class ExternalSystemTask extends AbstractTask {
                 // 只有在启用超时失败策略时才检查超时
                 if (isTimeoutFailureEnabled()) {
                     long currentTime = System.currentTimeMillis();
-                    long usedTime = TimeUnit.MILLISECONDS.toSeconds(currentTime - taskStartTime) + 1;
+                    long usedTimeMillis = currentTime - taskStartTime;
+                    long usedTime = (usedTimeMillis + 29999) / 60000; // 超过30秒取1分钟，小于30秒取0分钟
                     if (usedTime >= taskExecutionContext.getTaskTimeout()) {
                         isTimeout = true;
-                        log.error("External task timeout, used time: {}s, timeout: {}s",
-                                usedTime, taskExecutionContext.getTaskTimeout());
+                        log.error("External task timeout, used time: {}m, timeout: {}m",
+                                usedTime, taskExecutionContext.getTaskTimeout() / 60);
                         setExitStatusCode(TaskConstants.EXIT_CODE_FAILURE);
                         cancelTaskInstance();
                         return;
