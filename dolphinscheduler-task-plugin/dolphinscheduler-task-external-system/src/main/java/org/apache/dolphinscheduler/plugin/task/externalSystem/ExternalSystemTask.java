@@ -117,8 +117,8 @@ public class ExternalSystemTask extends AbstractTask {
             log.info("External task timeout check isTimeoutFailureEnabled:{}", isTimeoutFailureEnabled());
             if (isTimeoutFailureEnabled()) {
                 long currentTime = System.currentTimeMillis();
-                long usedTime = (currentTime - taskStartTime) / 1000;
-                log.info("External task timeout check, used time: {}s, timeout: {}s,currentTime: {},taskStartTime: {}",
+                long usedTime = TimeUnit.MILLISECONDS.toSeconds(currentTime - taskStartTime) + 1;
+                log.info("External task timeout check, used time: {}s, timeout: {}s, currentTime: {}, taskStartTime: {}",
                         usedTime, taskExecutionContext.getTaskTimeout(), currentTime, taskStartTime);
                 if (usedTime >= taskExecutionContext.getTaskTimeout()) {
                     isTimeout = true;
@@ -167,7 +167,7 @@ public class ExternalSystemTask extends AbstractTask {
                 // 只有在启用超时失败策略时才检查超时
                 if (isTimeoutFailureEnabled()) {
                     long currentTime = System.currentTimeMillis();
-                    long usedTime = (currentTime - taskStartTime) / 1000;
+                    long usedTime = TimeUnit.MILLISECONDS.toSeconds(currentTime - taskStartTime) + 1;
                     if (usedTime >= taskExecutionContext.getTaskTimeout()) {
                         isTimeout = true;
                         log.error("External task timeout, used time: {}s, timeout: {}s",
@@ -457,8 +457,6 @@ public class ExternalSystemTask extends AbstractTask {
      * 检查是否启用了超时失败策略
      */
     private boolean isTimeoutFailureEnabled() {
-        log.info("isTimeoutFailureEnabled:{},timeout:{}", taskExecutionContext.getTaskTimeoutStrategy(),
-                taskExecutionContext.getTaskTimeout());
         return taskExecutionContext.getTaskTimeoutStrategy() != null
                 && taskExecutionContext.getTaskTimeout() > 0
                 && taskExecutionContext.getTaskTimeout() < Integer.MAX_VALUE
