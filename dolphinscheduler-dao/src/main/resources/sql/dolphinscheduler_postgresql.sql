@@ -1380,3 +1380,27 @@ create table t_ds_jdbc_registry_data_change_event
     create_time        timestamp not null default current_timestamp,
     primary key (id)
 );
+
+DROP TABLE IF EXISTS t_ds_external_system;
+CREATE TABLE t_ds_external_system (
+    id SERIAL,
+    name VARCHAR(255) NOT NULL,
+    type VARCHAR(50),
+    connection_params TEXT NOT NULL,
+    user_id INTEGER NOT NULL,
+    create_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    CONSTRAINT uk_name UNIQUE (name)
+);
+
+DROP TABLE IF EXISTS t_ds_relation_external_system_user;
+CREATE TABLE t_ds_relation_external_system_user (
+    id SERIAL,
+    user_id INTEGER NOT NULL,
+    external_system_id INTEGER NOT NULL,
+    perm INTEGER DEFAULT 1,
+    create_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    update_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id)
+);
