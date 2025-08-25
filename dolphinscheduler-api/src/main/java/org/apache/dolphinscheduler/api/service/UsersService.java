@@ -204,6 +204,16 @@ public interface UsersService {
     Map<String, Object> grantDataSource(User loginUser, int userId, String datasourceIds);
 
     /**
+     * grant externalSystem
+     *
+     * @param loginUser login user
+     * @param userId user id
+     * @param externalSystemIds data source id array
+     * @return grant result code
+     */
+    Map<String, Object> grantExternalSystem(User loginUser, int userId, String externalSystemIds);
+
+    /**
      * query user info
      *
      * @param loginUser login user

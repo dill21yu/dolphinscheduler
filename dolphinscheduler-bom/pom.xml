@@ -117,6 +117,7 @@
         <zeppelin-client.version>0.10.1</zeppelin-client.version>
         <aliyun-voice.version>2.1.4</aliyun-voice.version>
         <nashorn-sandbox.version>0.3.2</nashorn-sandbox.version>
+        <io-jsonwebtoken.version>0.11.5</io-jsonwebtoken.version>
 
         <!-- 配置文件敏感信息加密 -->
         <jasypt-spring-boot-starter.version>3.0.5</jasypt-spring-boot-starter.version>
@@ -976,6 +977,22 @@
                 <artifactId>junit-jupiter-params</artifactId>
                 <version>${junit-jupiter-params.version}</version>
                 <scope>test</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${io-jsonwebtoken.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${io-jsonwebtoken.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${io-jsonwebtoken.version}</version>
             </dependency>
 
         </dependencies>

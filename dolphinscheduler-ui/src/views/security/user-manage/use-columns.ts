@@ -107,8 +107,7 @@ export function useColumns(onCallback: Function) {
             {
               default: () =>
                 t(
-                  `security.user.state_${
-                    rowData.state === 1 ? 'enabled' : 'disabled'
+                  `security.user.state_${rowData.state === 1 ? 'enabled' : 'disabled'
                   }`
                 )
             }
@@ -147,6 +146,10 @@ export function useColumns(onCallback: Function) {
                     {
                       label: t('security.user.namespace'),
                       key: 'authorize_namespace'
+                    },
+                    {
+                      label: t('security.user.thirdparty'),
+                      key: 'authorize_thirdparty'
                     }
                   ],
                   onSelect: (key) =>
@@ -196,26 +199,26 @@ export function useColumns(onCallback: Function) {
                 }
               ),
               IS_ADMIN &&
-                h(
-                  NTooltip,
-                  { trigger: 'hover' },
-                  {
-                    trigger: () =>
-                      h(
-                        NButton,
-                        {
-                          circle: true,
-                          type: 'error',
-                          size: 'small',
-                          class: 'edit',
-                          onClick: () =>
-                            void onCallback({ rowData }, 'resetPassword')
-                        },
-                        () => h(NIcon, null, () => h(KeyOutlined))
-                      ),
-                    default: () => t('security.user.reset_password')
-                  }
-                ),
+              h(
+                NTooltip,
+                { trigger: 'hover' },
+                {
+                  trigger: () =>
+                    h(
+                      NButton,
+                      {
+                        circle: true,
+                        type: 'error',
+                        size: 'small',
+                        class: 'edit',
+                        onClick: () =>
+                          void onCallback({ rowData }, 'resetPassword')
+                      },
+                      () => h(NIcon, null, () => h(KeyOutlined))
+                    ),
+                  default: () => t('security.user.reset_password')
+                }
+              ),
               h(
                 NPopconfirm,
                 {
