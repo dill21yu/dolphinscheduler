@@ -40,6 +40,7 @@ import static org.apache.dolphinscheduler.common.enums.AuditModelType.ALARM_INST
 import static org.apache.dolphinscheduler.common.enums.AuditModelType.CLUSTER;
 import static org.apache.dolphinscheduler.common.enums.AuditModelType.DATASOURCE;
 import static org.apache.dolphinscheduler.common.enums.AuditModelType.ENVIRONMENT;
+import static org.apache.dolphinscheduler.common.enums.AuditModelType.EXTERNAL_SYSTEM;
 import static org.apache.dolphinscheduler.common.enums.AuditModelType.FILE;
 import static org.apache.dolphinscheduler.common.enums.AuditModelType.FOLDER;
 import static org.apache.dolphinscheduler.common.enums.AuditModelType.K8S_NAMESPACE;
@@ -82,6 +83,7 @@ import org.apache.dolphinscheduler.api.audit.operator.impl.AlertInstanceAuditOpe
 import org.apache.dolphinscheduler.api.audit.operator.impl.ClusterAuditOperatorImpl;
 import org.apache.dolphinscheduler.api.audit.operator.impl.DatasourceAuditOperatorImpl;
 import org.apache.dolphinscheduler.api.audit.operator.impl.EnvironmentAuditOperatorImpl;
+import org.apache.dolphinscheduler.api.audit.operator.impl.ExternalSystemAuditOperatorImpl;
 import org.apache.dolphinscheduler.api.audit.operator.impl.K8SNamespaceAuditOperatorImpl;
 import org.apache.dolphinscheduler.api.audit.operator.impl.ProjectAuditOperatorImpl;
 import org.apache.dolphinscheduler.api.audit.operator.impl.ResourceAuditOperatorImpl;
@@ -172,6 +174,13 @@ public enum AuditType {
     DATASOURCE_CREATE(DATASOURCE, CREATE, DatasourceAuditOperatorImpl.class, new String[]{}, new String[]{ID}),
     DATASOURCE_UPDATE(DATASOURCE, UPDATE, DatasourceAuditOperatorImpl.class, new String[]{}, new String[]{ID}),
     DATASOURCE_DELETE(DATASOURCE, DELETE, DatasourceAuditOperatorImpl.class, new String[]{ID}, new String[]{}),
+
+    EXTERNAL_SYSTEM_CREATE(EXTERNAL_SYSTEM, CREATE, ExternalSystemAuditOperatorImpl.class, new String[]{},
+            new String[]{ID}),
+    EXTERNAL_SYSTEM_UPDATE(EXTERNAL_SYSTEM, UPDATE, ExternalSystemAuditOperatorImpl.class, new String[]{},
+            new String[]{ID}),
+    EXTERNAL_SYSTEM_DELETE(EXTERNAL_SYSTEM, DELETE, ExternalSystemAuditOperatorImpl.class, new String[]{ID},
+            new String[]{}),
 
     TENANT_CREATE(TENANT, CREATE, TenantAuditOperatorImpl.class, new String[]{}, new String[]{ID}),
     TENANT_UPDATE(TENANT, UPDATE, TenantAuditOperatorImpl.class, new String[]{ID}, new String[]{}),

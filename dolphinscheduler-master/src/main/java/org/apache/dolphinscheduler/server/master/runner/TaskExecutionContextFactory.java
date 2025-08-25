@@ -23,6 +23,7 @@ import static org.apache.dolphinscheduler.plugin.task.api.TaskConstants.NAMESPAC
 import org.apache.dolphinscheduler.common.utils.JSONUtils;
 import org.apache.dolphinscheduler.dao.entity.DataSource;
 import org.apache.dolphinscheduler.dao.entity.Environment;
+import org.apache.dolphinscheduler.dao.entity.ExternalSystem;
 import org.apache.dolphinscheduler.dao.entity.Project;
 import org.apache.dolphinscheduler.dao.entity.TaskInstance;
 import org.apache.dolphinscheduler.dao.entity.WorkflowDefinition;
@@ -37,8 +38,10 @@ import org.apache.dolphinscheduler.plugin.task.api.parameters.AbstractParameters
 import org.apache.dolphinscheduler.plugin.task.api.parameters.K8sTaskParameters;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.AbstractResourceParameters;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.DataSourceParameters;
+import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.ExternalSystemResourceParameters;
 import org.apache.dolphinscheduler.plugin.task.api.parameters.resource.ResourceParametersHelper;
 import org.apache.dolphinscheduler.plugin.task.api.utils.MapUtils;
+import org.apache.dolphinscheduler.server.master.cluster.ExternalSystemTokenManager;
 import org.apache.dolphinscheduler.server.master.config.MasterConfig;
 import org.apache.dolphinscheduler.server.master.engine.task.runnable.TaskExecutionContextBuilder;
 import org.apache.dolphinscheduler.server.master.engine.task.runnable.TaskExecutionContextCreateRequest;
@@ -72,6 +75,9 @@ public class TaskExecutionContextFactory {
     @Autowired
     private IEnvironmentDao environmentDao;
 
+    @Autowired
+    private ExternalSystemTokenManager externalSystemTokenManager;
+
     public TaskExecutionContext createTaskExecutionContext(TaskExecutionContextCreateRequest request) {
         final TaskInstance taskInstance = request.getTaskInstance();
         final WorkflowInstance workflowInstance = request.getWorkflowInstance();
@@ -102,6 +108,9 @@ public class TaskExecutionContextFactory {
                     case DATASOURCE:
                         assembleDataSourceParameters(map);
                         break;
+                    case EXTERNAL_SYSTEM:
+                        assembleExternalSystem(map);
+                        break;
                     default:
                         break;
                 }
@@ -124,6 +133,24 @@ public class TaskExecutionContextFactory {
             dataSourceParameters.setType(datasource.getType());
             dataSourceParameters.setConnectionParams(datasource.getConnectionParams());
             map.put(code, dataSourceParameters);
+        });
+    }
+
+    private void assembleExternalSystem(Map<Integer, AbstractResourceParameters> map) {
+        if (MapUtils.isEmpty(map)) {
+            return;
+        }
+
+        map.forEach((code, parameters) -> {
+            ExternalSystem externalSystem = processService.findExternalSystemById(code);
+            if (Objects.isNull(externalSystem)) {
+                return;
+            }
+            ExternalSystemResourceParameters externalSystemResourceParameters = new ExternalSystemResourceParameters();
+            externalSystemResourceParameters.setConnectionParams(externalSystem.getConnectionParams());
+            externalSystemResourceParameters
+                    .setAuthenticationToken(externalSystemTokenManager.getLatestTokenForTaskDispatch(externalSystem));
+            map.put(code, externalSystemResourceParameters);
         });
     }
 

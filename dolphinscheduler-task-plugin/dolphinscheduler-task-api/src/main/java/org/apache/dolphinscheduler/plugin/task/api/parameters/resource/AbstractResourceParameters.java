@@ -23,7 +23,8 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo;
 
 @JsonTypeInfo(use = JsonTypeInfo.Id.NAME, visible = true, property = "resourceType")
 @JsonSubTypes({
-        @Type(value = DataSourceParameters.class, name = "DATASOURCE")
+        @Type(value = DataSourceParameters.class, name = "DATASOURCE"),
+        @Type(value = ExternalSystemResourceParameters.class, name = "EXTERNAL_SYSTEM"),
 })
 public abstract class AbstractResourceParameters {
 

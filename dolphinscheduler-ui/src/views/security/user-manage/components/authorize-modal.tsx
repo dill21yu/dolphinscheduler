@@ -207,6 +207,15 @@ export const AuthorizeModal = defineComponent({
             class={styles.transfer}
           />
         )}
+        {type === 'authorize_thirdparty' && (
+          <NTransfer
+            virtualScroll
+            options={this.unauthorizedThirdparty}
+            filterable
+            v-model:value={this.authorizedThirdparty}
+            class={styles.transfer}
+          />
+        )}
       </Modal>
     )
   }
