@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.dolphinscheduler</groupId>
         <artifactId>dolphinscheduler</artifactId>
-        <version>dev-SNAPSHOT</version>
+        <version>3.3.2-SNAPSHOT</version>
     </parent>
     <artifactId>dolphinscheduler-datasource-plugin</artifactId>
     <packaging>pom</packaging>
@@ -57,6 +57,7 @@
         <module>dolphinscheduler-datasource-k8s</module>
         <module>dolphinscheduler-datasource-hana</module>
         <module>dolphinscheduler-datasource-aliyunserverlessspark</module>
+        <module>dolphinscheduler-datasource-dolphindb</module>
     </modules>
 
     <dependencyManagement>

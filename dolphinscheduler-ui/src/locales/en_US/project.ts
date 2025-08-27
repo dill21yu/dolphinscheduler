@@ -125,7 +125,6 @@ export default {
     complement_data: 'Complement Data',
     startup_parameter: 'Startup Parameter',
     whether_dry_run: 'Whether Dry-Run',
-    whether_test: 'Whether Test',
     continue: 'Continue',
     end: 'End',
     none_send: 'None',
@@ -925,6 +924,8 @@ export default {
     entry_point_arguments_tips: 'entry point arguments',
     spark_submit_parameters: 'spark submit parameters',
     spark_submit_parameters_tips: 'spark submit parameters',
+    template_id: 'spark template id',
+    template_id_tips: 'spark template id',
     is_production: 'is production',
     is_production_tips: 'is production',
     json_format_tips: 'Json parameters format is abnormal'
