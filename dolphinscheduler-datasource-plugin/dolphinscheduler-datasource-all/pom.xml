@@ -21,7 +21,7 @@
     <parent>
         <groupId>org.apache.dolphinscheduler</groupId>
         <artifactId>dolphinscheduler-datasource-plugin</artifactId>
-        <version>dev-SNAPSHOT</version>
+        <version>3.3.2-SNAPSHOT</version>
     </parent>
 
     <artifactId>dolphinscheduler-datasource-all</artifactId>
@@ -161,6 +161,11 @@
         <dependency>
             <groupId>org.apache.dolphinscheduler</groupId>
             <artifactId>dolphinscheduler-datasource-aliyunserverlessspark</artifactId>
+            <version>${project.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.dolphinscheduler</groupId>
+            <artifactId>dolphinscheduler-datasource-dolphindb</artifactId>
             <version>${project.version}</version>
         </dependency>
     </dependencies>

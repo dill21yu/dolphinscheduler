@@ -269,7 +269,6 @@ CREATE TABLE t_ds_command (
   dry_run                   int DEFAULT '0' ,
   workflow_instance_id       int DEFAULT 0,
   workflow_definition_version int DEFAULT 0,
-  test_flag                 int DEFAULT NULL ,
   PRIMARY KEY (id)
 ) ;
 
@@ -319,7 +318,6 @@ CREATE TABLE t_ds_error_command (
   message                   text ,
   workflow_instance_id       int DEFAULT 0,
   workflow_definition_version int DEFAULT 0,
-  test_flag                 int DEFAULT NULL ,
   PRIMARY KEY (id)
 );
 
@@ -558,7 +556,6 @@ CREATE TABLE t_ds_workflow_instance (
   dry_run int DEFAULT '0' ,
   next_workflow_instance_id int DEFAULT '0',
   restart_time timestamp DEFAULT NULL ,
-  test_flag int DEFAULT NULL ,
   PRIMARY KEY (id)
 ) ;
 
@@ -829,7 +826,6 @@ CREATE TABLE t_ds_task_instance (
   dry_run int DEFAULT '0' ,
   cpu_quota int DEFAULT '-1' NOT NULL,
   memory_max int DEFAULT '-1' NOT NULL,
-  test_flag int DEFAULT NULL ,
   PRIMARY KEY (id)
 ) ;
 
@@ -1074,7 +1070,7 @@ INSERT INTO t_ds_queue(queue_name, queue, create_time, update_time)
 VALUES ('default', 'default', '2018-11-29 10:22:33', '2018-11-29 10:22:33');
 
 -- Records of t_ds_queue,default queue name : default
-INSERT INTO t_ds_version(version) VALUES ('3.3.0');
+INSERT INTO t_ds_version(version) VALUES ('3.3.1');
 
 --
 -- Table structure for table t_ds_plugin_define
@@ -1315,7 +1311,7 @@ CREATE INDEX idx_sub_workflow_instance_id ON t_ds_relation_sub_workflow (sub_wor
 -- ----------------------------
 DROP TABLE IF EXISTS t_ds_workflow_task_lineage;
 CREATE TABLE t_ds_workflow_task_lineage (
-    id int NOT NULL,
+    id SERIAL NOT NULL,
     workflow_definition_code bigint NOT NULL DEFAULT 0,
     workflow_definition_version int NOT NULL DEFAULT 0,
     task_definition_code bigint NOT NULL DEFAULT 0,
