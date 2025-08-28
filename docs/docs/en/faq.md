@@ -280,7 +280,7 @@ A ： Will hive pom
 <dependency>
     <groupId>org.apache.hive</groupId>
     <artifactId>hive-jdbc</artifactId>
-    <version>2.3.9</version>
+    3.3.12.3.9</version>
 </dependency>
 ```
 
@@ -290,7 +290,7 @@ change into
 <dependency>
     <groupId>org.apache.hive</groupId>
     <artifactId>hive-jdbc</artifactId>
-    <version>1.1.0</version>
+    3.3.11.1.0</version>
 </dependency>
 ```
 
@@ -484,7 +484,7 @@ A: 1, Edit project root dir maven config file, remove scope test property so tha
 <dependency>
 	<groupId>mysql</groupId>
 	<artifactId>mysql-connector-java</artifactId>
-	<version>${mysql.connector.version}</version>
+	3.3.1${mysql.connector.version}</version>
 	<scope>test<scope>
 </dependency>
 ```
@@ -749,6 +749,15 @@ update t_ds_version set version='2.0.1';
 A：After version 3.0.0-alpha, Python gateway server integrate into API server, and Python gateway service will start when you
 start API server. If you want disabled when Python gateway service you could change API server configuration in path
 `api-server/conf/application.yaml` and change attribute `python-gateway.enabled : false`.
+
+---
+
+## Q: Why is the schedule status of a workflow definition set to "Offline" after importing an online workflow definition?
+
+A: This is because we want to prevent users from directly importing a scheduled workflow that is already "Online".
+Therefore, when exporting such workflows, the system automatically changes their status to "Offline".
+To enforce this rule, even if a user manually sets the schedule status to "Online" in the workflow definition before importing,
+the system will override it and set it to "Offline".
 
 ---
 

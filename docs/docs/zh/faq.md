@@ -251,7 +251,7 @@ A： 将 hive pom
 <dependency>
     <groupId>org.apache.hive</groupId>
     <artifactId>hive-jdbc</artifactId>
-    <version>2.3.9</version>
+    3.3.12.3.9</version>
 </dependency>
 ```
 
@@ -261,7 +261,7 @@ A： 将 hive pom
 <dependency>
     <groupId>org.apache.hive</groupId>
     <artifactId>hive-jdbc</artifactId>
-    <version>1.1.0</version>
+    3.3.11.1.0</version>
 </dependency>
 ```
 
@@ -455,7 +455,7 @@ A：1，修改项目根目录 maven 配置文件，移除 scope 的 test 属性�
 <dependency>
 	<groupId>mysql</groupId>
 	<artifactId>mysql-connector-java</artifactId>
-	<version>${mysql.connector.version}</version>
+	3.3.1${mysql.connector.version}</version>
 	<scope>test<scope>
 </dependency>
 ```
@@ -735,5 +735,14 @@ A: 对于标识为`缓存执行`的任务, 当任务启动时会生成一个缓�
 - 若无，则任务照常运行，并在任务完成时将任务实例的数据存入缓存
 
 若不需要缓存时，可以在工作流实例中右键运行清除缓存，则会清除该版本下当前输入的参数的缓存数据。
+
+--- 
+
+## Q：为什么导入一个在线的工作流定义，导入后的工作流定义的定时状态是下线的？
+
+A：因为我们不希望用户直接导入一个`在线`的定时工作流，所以在导出时，系统会将它的状态改为`下线`。
+为了遵循这个原则，即使用户自行将要导入的工作流定义中的定时状态改为`在线`，系统也会将状态覆盖为`下线`。
+
+---
 
 我们会持续收集更多的 FAQ。
