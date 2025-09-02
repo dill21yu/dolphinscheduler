@@ -38,7 +38,7 @@ CREATE TABLE `t_ds_external_system` (
   `update_time` DATETIME NOT NULL COMMENT 'Update time',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uk_name` (`name`)
-) ENGINE=INNODB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin
+) ENGINE=INNODB  DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
 
 DROP TABLE IF EXISTS `t_ds_relation_external_system_user`;
 CREATE TABLE `t_ds_relation_external_system_user` (
@@ -49,4 +49,4 @@ CREATE TABLE `t_ds_relation_external_system_user` (
   `create_time` DATETIME DEFAULT NULL COMMENT 'Creation time',
   `update_time` DATETIME DEFAULT NULL COMMENT 'Update time',
   PRIMARY KEY (`id`)
-) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_bin
+) ENGINE=INNODB DEFAULT CHARSET=utf8 COLLATE=utf8_bin;
